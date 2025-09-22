@@ -11,6 +11,33 @@
   }
   *{ box-sizing:border-box; }
   body{ margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); }
+  body.checking-auth { opacity: 0; }
+  .auth-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #f7f9fc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+  .auth-loading .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #4f46e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
   header{ position:sticky; top:0; z-index:10; background:rgba(255,255,255,.9); border-bottom:1px solid var(--border); backdrop-filter: blur(6px); }
   .bar{ height:3px; background:linear-gradient(90deg,var(--brand),var(--flare),var(--aqua)); }
   .container{ max-width:1200px; margin:0 auto; padding:0 16px; }
@@ -70,7 +97,11 @@
   body{ scroll-padding-top:64px; } /* avoids hidden content under sticky bar */
 </style>
 </head>
-<body>
+<body class="checking-auth">
+  <div class="auth-loading" id="authLoading">
+    <div class="spinner"></div>
+    <div>Checking authentication...</div>
+  </div>
   <div class="diag">
     <div><b>Test Mode</b> — Storage: <b id="dST">?</b></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
@@ -96,6 +127,10 @@
       <a href="#" data-view="admin">Admin</a>
       <a href="#" data-view="sales">Sales</a>
       <a href="#" data-view="rj">RJ</a>
+      <a href="#" data-view="collections">Collections</a>
+      <a href="#" data-view="shows">Shows</a>
+      <a href="#" data-view="users">Users</a>
+      <a href="#" data-view="settings">Settings</a>
     </nav>
     <div class="clock" id="serverClock">—</div>
     <div class="user-block" id="userBlock">
@@ -116,7 +151,7 @@
 
       <main>
         <!-- ADMIN DASHBOARD -->
-        <section id="panel-admin" class="panel">
+        <section id="panel-admin" class="panel" data-panel="admin">
           <div class="head">Admin Dashboard & Analytics</div>
           <div class="body">
             <div class="rowgrid rowgrid-4">
@@ -162,7 +197,7 @@
         </section>
 
         <!-- SALES -->
-        <section id="panel-dashboard-sales" class="panel hidden">
+        <section id="panel-dashboard-sales" class="panel hidden" data-panel="sales">
           <div class="head">Sales Dashboard</div>
           <div class="body rowgrid rowgrid-2">
             <form id="createVoucherForm" class="card" autocomplete="off">
@@ -227,7 +262,7 @@
         </section>
 
         <!-- RJ -->
-        <section id="panel-winners" class="panel hidden">
+        <section id="panel-winners" class="panel hidden" data-panel="rj">
           <div class="head">Winner Declaration</div>
           <div class="body">
             <div class="card" style="margin-bottom:10px">
@@ -268,7 +303,7 @@
         </section>
 
         <!-- COLLECTIONS -->
-        <section id="panel-collections" class="panel hidden">
+        <section id="panel-collections" class="panel hidden" data-panel="collections">
           <div class="head">Prize Collection</div>
           <div class="body">
             <div class="rowgrid rowgrid-4">
@@ -303,7 +338,7 @@
         </section>
 
         <!-- SHOWS -->
-        <section id="panel-shows" class="panel hidden">
+        <section id="panel-shows" class="panel hidden" data-panel="shows">
           <div class="head">📺 Show Management</div>
           <div class="body">
             <form id="showForm" class="card">
@@ -337,7 +372,7 @@
         </section>
 
         <!-- USERS -->
-        <section id="panel-users" class="panel hidden">
+        <section id="panel-users" class="panel hidden" data-panel="users">
           <div class="head">👤 User Management</div>
           <div class="body">
             <form id="userForm" class="card">
@@ -365,7 +400,7 @@
         </section>
 
         <!-- SETTINGS -->
-        <section id="panel-settings" class="panel hidden">
+        <section id="panel-settings" class="panel hidden" data-panel="settings">
           <div class="head">⚙️ System Settings</div>
           <div class="body">
             <form id="settingsForm" class="card">
@@ -1281,17 +1316,41 @@
   showPanel('panel-admin');
 })();
 </script>
-
-</script>
-
 <!-- Authentication Check - Redirects to login.html if not authenticated -->
 <script>
 // Check authentication on page load
 async function checkAuthentication() {
+  // For local testing, bypass authentication if running on localhost
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('Local testing mode - bypassing authentication');
+    const mockUser = {
+      id: 1,
+      name: 'Test Admin',
+      email: 'admin@goalive.local',
+      role: 'admin'
+    };
+    displayUserInfo(mockUser);
+    initializeApp(mockUser);
+    
+    // Hide loading indicator and show the page content
+    const authLoading = document.getElementById('authLoading');
+    if (authLoading) authLoading.style.display = 'none';
+    document.body.classList.remove('checking-auth');
+    return;
+  }
+  
+  // Set a timeout for authentication check
+  const timeoutId = setTimeout(() => {
+    console.log('Authentication check timeout, redirecting to login');
+    window.location.href = '/login.html';
+  }, 5000); // 5 second timeout
+
   try {
     const response = await fetch('/ga/api/me.php', {
       credentials: 'same-origin'
     });
+    
+    clearTimeout(timeoutId); // Clear timeout since we got a response
     
     if (response.ok) {
       const userData = await response.json();
@@ -1300,12 +1359,18 @@ async function checkAuthentication() {
       // User is authenticated - show user info and continue
       displayUserInfo(userData.user);
       initializeApp(userData.user);
+      
+      // Hide loading indicator and show the page content
+      const authLoading = document.getElementById('authLoading');
+      if (authLoading) authLoading.style.display = 'none';
+      document.body.classList.remove('checking-auth');
     } else {
       // User not authenticated - redirect to login page
       console.log('User not authenticated, redirecting to login');
       window.location.href = '/login.html';
     }
   } catch (error) {
+    clearTimeout(timeoutId); // Clear timeout
     console.error('Authentication check failed:', error);
     // On error, redirect to login page
     window.location.href = '/login.html';
@@ -1447,15 +1512,36 @@ document.addEventListener('DOMContentLoaded', checkAuthentication);
 document.querySelectorAll('.tabs a').forEach(a=>{
   a.addEventListener('click', e=>{
     e.preventDefault();
-    const view = a.dataset.view;              // "admin"|"sales"|"rj"
+    const view = a.dataset.view;              // "admin"|"sales"|"rj"|"collections"|"shows"|"users"|"settings"
+    
+    console.log('Switching to view:', view);
+    
+    // Update active tab
     document.querySelectorAll('.tabs a').forEach(x=>x.classList.remove('active'));
     a.classList.add('active');
+    
+    // Show/hide panels
     document.querySelectorAll('[data-panel]').forEach(p=>{
-      p.style.display = (p.dataset.panel === view) ? 'block' : 'none';
+      if (p.dataset.panel === view) {
+        p.style.display = 'block';
+        p.classList.remove('hidden');
+      } else {
+        p.style.display = 'none';
+        p.classList.add('hidden');
+      }
     });
   });
 });
-// Navigation will be handled by the authentication system
+
+// Set default active tab and panel on load
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const defaultTab = document.querySelector('.tabs a[data-view="admin"]');
+    if (defaultTab && !document.querySelector('.tabs a.active')) {
+      defaultTab.click();
+    }
+  }, 200);
+});
 </script>
 
 </body>

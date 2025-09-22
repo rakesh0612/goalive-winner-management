@@ -1384,16 +1384,14 @@ function displayUserInfo(user) {
   
   if (userBadge) {
     userBadge.textContent = `${user.name} • ${user.role}`;
+    userBadge.style.cursor = 'pointer';
+    userBadge.title = 'Click to sign out';
+    userBadge.onclick = logout;
   }
   
   if (navUserName) {
     navUserName.textContent = user.name;
   }
-  
-  // Add logout functionality
-  userBadge.addEventListener('click', logout);
-  userBadge.style.cursor = 'pointer';
-  userBadge.title = 'Click to sign out';
 }
 
 // Logout function
@@ -1407,51 +1405,102 @@ async function logout() {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      window.location.href = '/login.html';
+      // For localhost testing, just reload the page
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        window.location.reload();
+      } else {
+        window.location.href = '/login.html';
+      }
     }
   }
 }
 
 // Initialize the main application
 function initializeApp(user) {
+  console.log('Initializing app for user:', user);
+  
   // Apply session to existing functions if they exist
   if (typeof applySession === 'function') {
     applySession(user);
   }
   
+  // Initialize navigation tabs
+  initializeNavigation();
+  
   // Show appropriate panel based on user role
   setTimeout(() => {
-    if (typeof showPanel === 'function') {
-      const roleMap = {
-        'admin': 'panel-admin',
-        'sales': 'panel-dashboard-sales',
-        'rj': 'panel-winners',
-        'collection': 'panel-collections'
-      };
-      const panelId = roleMap[user.role.toLowerCase()] || 'panel-admin';
-      showPanel(panelId);
-      console.log('Showing panel:', panelId);
-      
-      // Also activate the correct navigation tab
-      const navMap = {
-        'admin': 'admin',
-        'sales': 'sales',
-        'rj': 'rj',
-        'collection': 'rj'  // Collection users see RJ panel
-      };
-      const navView = navMap[user.role.toLowerCase()] || 'admin';
-      const navTab = document.querySelector(`.tabs a[data-view="${navView}"]`);
-      if (navTab) {
-        document.querySelectorAll('.tabs a').forEach(x => x.classList.remove('active'));
-        navTab.classList.add('active');
-        
-        // Show the correct panel
-        document.querySelectorAll('[data-panel]').forEach(p => {
-          p.style.display = (p.dataset.panel === navView) ? 'block' : 'none';
-        });
-      }
-    }
+    const roleMap = {
+      'admin': 'admin',
+      'sales': 'sales', 
+      'rj': 'rj',
+      'collection': 'collections'
+    };
+    const defaultView = roleMap[user.role.toLowerCase()] || 'admin';
+    switchToView(defaultView);
   }, 100);
+}
+
+// Initialize navigation system
+function initializeNavigation() {
+  console.log('Initializing navigation...');
+  
+  // Remove any existing listeners and add new ones
+  document.querySelectorAll('.tabs a').forEach(a => {
+    // Clone node to remove all event listeners
+    const newA = a.cloneNode(true);
+    a.parentNode.replaceChild(newA, a);
+    
+    // Add new click handler
+    newA.addEventListener('click', (e) => {
+      e.preventDefault();
+      const view = newA.dataset.view;
+      console.log('Clicking tab:', view);
+      switchToView(view);
+    });
+  });
+  
+  console.log('Navigation initialized');
+}
+
+// Switch to a specific view
+function switchToView(view) {
+  console.log('Switching to view:', view);
+  
+  // Update active tab
+  document.querySelectorAll('.tabs a').forEach(x => x.classList.remove('active'));
+  const activeTab = document.querySelector(`.tabs a[data-view="${view}"]`);
+  if (activeTab) {
+    activeTab.classList.add('active');
+  }
+  
+  // Show/hide panels
+  document.querySelectorAll('[data-panel]').forEach(p => {
+    if (p.dataset.panel === view) {
+      p.style.display = 'block';
+      p.classList.remove('hidden');
+      console.log('Showing panel:', p.id);
+    } else {
+      p.style.display = 'none';
+      p.classList.add('hidden');
+    }
+  });
+  
+  // Trigger any panel-specific updates
+  if (typeof showPanel === 'function') {
+    const panelMap = {
+      'admin': 'panel-admin',
+      'sales': 'panel-dashboard-sales', 
+      'rj': 'panel-winners',
+      'collections': 'panel-collections',
+      'shows': 'panel-shows',
+      'users': 'panel-users',
+      'settings': 'panel-settings'
+    };
+    const panelId = panelMap[view];
+    if (panelId) {
+      showPanel(panelId);
+    }
+  }
 }
 
 // Run authentication check when page loads
@@ -1460,87 +1509,63 @@ document.addEventListener('DOMContentLoaded', checkAuthentication);
 <!-- /GA Login Modal + JS -->
 
 <script>
-(async function initClock(){
+// Simple fallback clock for localhost testing
+(function initSimpleClock(){
   const el = document.getElementById('serverClock');
-  if (!el) {
-    console.warn('serverClock element not found');
-    return;
+  if (!el) return;
+  
+  function updateClock() {
+    const now = new Date();
+    el.textContent = now.toLocaleString();
   }
   
-  try {
-    const resp = await fetch('/api/server_time.php', {credentials:'same-origin'});
-    if (!resp.ok) throw new Error('Server time API failed');
-    
-    const data = await resp.json();
-    let t = data.epoch_ms;
-
-    function fmtBahrain(ms){
-      const d = new Date(ms);
-      // Asia/Bahrain (UTC+3) display without relying on client tz:
-      return d.toLocaleString('en-GB', { timeZone: 'Asia/Bahrain', hour12: false });
-    }
-    
-    function tick(){ 
-      if (el) el.textContent = fmtBahrain(t); 
-      t += 1000; 
-    }
-    
-    tick();
-    setInterval(tick, 1000);
-    
-    // Optional: resync from server every 5 min
-    setInterval(async ()=> {
-      try { 
-        const r = await fetch('/api/server_time.php'); 
-        if (r.ok) {
-          const j = await r.json(); 
-          t = j.epoch_ms; 
-        }
-      } catch(e) {
-        console.warn('Clock resync failed:', e);
-      }
-    }, 300000);
-    
-  } catch(e) {
-    console.error('Clock initialization failed:', e);
-    if (el) el.textContent = 'Clock Error';
-  }
+  updateClock();
+  setInterval(updateClock, 1000);
 })();
-</script>
 
-<script>
-document.querySelectorAll('.tabs a').forEach(a=>{
-  a.addEventListener('click', e=>{
-    e.preventDefault();
-    const view = a.dataset.view;              // "admin"|"sales"|"rj"|"collections"|"shows"|"users"|"settings"
-    
-    console.log('Switching to view:', view);
-    
-    // Update active tab
-    document.querySelectorAll('.tabs a').forEach(x=>x.classList.remove('active'));
-    a.classList.add('active');
-    
-    // Show/hide panels
-    document.querySelectorAll('[data-panel]').forEach(p=>{
-      if (p.dataset.panel === view) {
-        p.style.display = 'block';
-        p.classList.remove('hidden');
-      } else {
-        p.style.display = 'none';
-        p.classList.add('hidden');
-      }
-    });
-  });
-});
-
-// Set default active tab and panel on load
+// Ensure navigation is working - this runs after everything is loaded
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
-    const defaultTab = document.querySelector('.tabs a[data-view="admin"]');
-    if (defaultTab && !document.querySelector('.tabs a.active')) {
-      defaultTab.click();
+    console.log('Final navigation setup...');
+    
+    // Make sure all tab links are clickable
+    document.querySelectorAll('.tabs a').forEach(a => {
+      if (!a.onclick && !a.hasAttribute('data-handler-added')) {
+        a.setAttribute('data-handler-added', 'true');
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const view = a.dataset.view;
+          console.log('Direct tab click:', view);
+          
+          if (typeof switchToView === 'function') {
+            switchToView(view);
+          } else {
+            // Fallback navigation
+            document.querySelectorAll('.tabs a').forEach(x => x.classList.remove('active'));
+            a.classList.add('active');
+            
+            document.querySelectorAll('[data-panel]').forEach(p => {
+              if (p.dataset.panel === view) {
+                p.style.display = 'block';
+                p.classList.remove('hidden');
+              } else {
+                p.style.display = 'none';
+                p.classList.add('hidden');
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    // Make sure at least one tab is active
+    if (!document.querySelector('.tabs a.active')) {
+      const firstTab = document.querySelector('.tabs a[data-view="admin"]');
+      if (firstTab) {
+        firstTab.click();
+      }
     }
-  }, 200);
+  }, 300);
 });
 </script>
 

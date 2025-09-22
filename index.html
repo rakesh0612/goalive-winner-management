@@ -1597,30 +1597,33 @@
 <script>
 // Check authentication on page load
 async function checkAuthentication() {
-  // For local testing, bypass authentication if running on localhost
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('Local testing mode - bypassing authentication');
-    const mockUser = {
-      id: 1,
-      name: 'Test Admin',
-      email: 'admin@goalive.local',
-      role: 'admin'
-    };
-    displayUserInfo(mockUser);
-    initializeApp(mockUser);
-    
-    // Hide loading indicator and show the page content
-    const authLoading = document.getElementById('authLoading');
-    if (authLoading) authLoading.style.display = 'none';
-    document.body.classList.remove('checking-auth');
-    return;
+  console.log('Checking authentication...');
+  
+  // Check if user is already logged in via session storage or cookie
+  const storedUser = localStorage.getItem('currentUser');
+  if (storedUser) {
+    try {
+      const user = JSON.parse(storedUser);
+      console.log('Found stored user session:', user);
+      displayUserInfo(user);
+      initializeApp(user);
+      
+      // Hide loading indicator and show the page content
+      const authLoading = document.getElementById('authLoading');
+      if (authLoading) authLoading.style.display = 'none';
+      document.body.classList.remove('checking-auth');
+      return;
+    } catch (e) {
+      console.error('Invalid stored user data');
+      localStorage.removeItem('currentUser');
+    }
   }
   
   // Set a timeout for authentication check
   const timeoutId = setTimeout(() => {
     console.log('Authentication check timeout, redirecting to login');
-    window.location.href = '/login.html';
-  }, 5000); // 5 second timeout
+    window.location.href = 'login.html';
+  }, 3000); // 3 second timeout
 
   try {
     const response = await fetch('/ga/api/me.php', {
@@ -1633,6 +1636,9 @@ async function checkAuthentication() {
       const userData = await response.json();
       console.log('User authenticated:', userData.user);
       
+      // Store user session
+      localStorage.setItem('currentUser', JSON.stringify(userData.user));
+      
       // User is authenticated - show user info and continue
       displayUserInfo(userData.user);
       initializeApp(userData.user);
@@ -1644,13 +1650,12 @@ async function checkAuthentication() {
     } else {
       // User not authenticated - redirect to login page
       console.log('User not authenticated, redirecting to login');
-      window.location.href = '/login.html';
+      window.location.href = 'login.html';
     }
   } catch (error) {
     clearTimeout(timeoutId); // Clear timeout
-    console.error('Authentication check failed:', error);
-    // On error, redirect to login page
-    window.location.href = '/login.html';
+    console.log('Authentication API error, redirecting to login:', error);
+    window.location.href = 'login.html';
   }
 }
 
@@ -1678,11 +1683,14 @@ async function logout() {
       method: 'POST',
       credentials: 'same-origin'
     });
+    
+    // Clear stored session
+    localStorage.removeItem('currentUser');
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
     // Always redirect to login page
-    window.location.href = '/login.html';
+    window.location.href = 'login.html';
   }
 }
 

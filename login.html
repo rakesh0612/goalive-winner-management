@@ -255,8 +255,13 @@
                     const result = await response.json();
                     console.log('Login successful:', result);
                     
+                    // Store user session for the main application
+                    if (result.user) {
+                        localStorage.setItem('currentUser', JSON.stringify(result.user));
+                    }
+                    
                     // Redirect to main application
-                    window.location.href = '/index.html';
+                    window.location.href = 'index.html';
                 } else {
                     const errorData = await response.json().catch(() => ({}));
                     showError(errorData.error || 'Invalid email or password');

@@ -15,7 +15,8 @@ if (!$user || !$user['active'] || !password_verify($password, $user['password_ha
   json_err('Invalid credentials', 401);
 }
 
-$_SESSION['uid'] = (int)$user['id'];
+$_SESSION['user_id'] = (int)$user['id'];
+$_SESSION['uid'] = (int)$user['id']; // Backward compatibility
 $_SESSION['email'] = $user['email'];
 $_SESSION['name'] = $user['name'];
 $_SESSION['role'] = $user['role'];

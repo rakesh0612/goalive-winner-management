@@ -7,12 +7,29 @@ $password = (string)($input['password'] ?? '');
 
 if ($email === '' || $password === '') json_err('Email and password required', 422);
 
-$stmt = $pdo->prepare('SELECT id, name, email, password_hash, role, active FROM users WHERE email = ? LIMIT 1');
-$stmt->execute([$email]);
-$user = $stmt->fetch();
+// Check if any users exist in the database
+$stmt = $pdo->query('SELECT COUNT(*) as count FROM users');
+$userCount = $stmt->fetch()['count'];
 
-if (!$user || !$user['active'] || !password_verify($password, $user['password_hash'])) {
-  json_err('Invalid credentials', 401);
+// If no users exist and someone tries to login with admin credentials, create the admin user
+if ($userCount == 0 && $email === 'admin@goalive.local' && $password === 'admin123') {
+    $hash = password_hash('admin123', PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, active) VALUES (?, ?, ?, ?, 1)');
+    $stmt->execute(['Admin User', 'admin@goalive.local', $hash, 'admin']);
+    
+    // Get the newly created user
+    $stmt = $pdo->prepare('SELECT id, name, email, password_hash, role, active FROM users WHERE email = ? LIMIT 1');
+    $stmt->execute(['admin@goalive.local']);
+    $user = $stmt->fetch();
+} else {
+    // Normal login flow
+    $stmt = $pdo->prepare('SELECT id, name, email, password_hash, role, active FROM users WHERE email = ? LIMIT 1');
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
+
+    if (!$user || !$user['active'] || !password_verify($password, $user['password_hash'])) {
+      json_err('Invalid credentials', 401);
+    }
 }
 
 $_SESSION['user_id'] = (int)$user['id'];

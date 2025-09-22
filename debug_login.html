@@ -123,9 +123,13 @@
         <h1>🔧 DEBUG LOGIN</h1>
         
         <div class="credentials">
-            <h3>Use These Credentials:</h3>
+            <h3>🔑 Test Credentials:</h3>
             <strong>Email:</strong> admin@goalive.local<br>
-            <strong>Password:</strong> admin123
+            <strong>Password:</strong> admin123<br><br>
+            <small>💡 <strong>Testing Modes:</strong><br>
+            • <strong>Localhost:</strong> Uses mock authentication<br>
+            • <strong>PHP Server:</strong> Uses real database authentication<br>
+            • <strong>Fallback:</strong> Mock auth if PHP fails</small>
         </div>
         
         <div class="debug" id="debugInfo">
@@ -212,8 +216,41 @@
                 password: formData.get('password')
             };
 
-            debug(`📤 Sending login request with email: ${loginData.email}`);
+            debug(`📤 Attempting login with email: ${loginData.email}`);
 
+            // Check if we're running on a server that supports PHP
+            const isLocalTesting = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            if (isLocalTesting) {
+                debug('🔧 Local testing mode - Using client-side authentication simulation');
+                
+                // Simulate the PHP authentication for testing
+                if (loginData.email === 'admin@goalive.local' && loginData.password === 'admin123') {
+                    const mockUser = {
+                        id: 1,
+                        name: 'Test Admin',
+                        email: 'admin@goalive.local',
+                        role: 'admin'
+                    };
+                    
+                    showSuccess('✅ Mock login successful! Storing session...');
+                    localStorage.setItem('currentUser', JSON.stringify(mockUser));
+                    debug(`👤 Mock user stored: ${mockUser.name} (${mockUser.role})`);
+                    
+                    setTimeout(() => {
+                        debug('🔄 Redirecting to dashboard...');
+                        window.location.href = 'index.html';
+                    }, 2000);
+                    return;
+                } else {
+                    showError('❌ Invalid credentials (use admin@goalive.local / admin123 for testing)');
+                    loginButton.disabled = false;
+                    loginButton.textContent = 'Sign In';
+                    return;
+                }
+            }
+
+            // Try PHP authentication for production servers
             try {
                 const response = await fetch('/ga/api/login.php', {
                     method: 'POST',
@@ -246,7 +283,27 @@
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                showError('Connection error: ' + error.message);
+                debug(`❌ PHP Authentication failed: ${error.message}`);
+                
+                // Fallback to mock authentication for testing
+                if (loginData.email === 'admin@goalive.local' && loginData.password === 'admin123') {
+                    debug('🔄 Falling back to mock authentication...');
+                    const mockUser = {
+                        id: 1,
+                        name: 'Test Admin (Mock)',
+                        email: 'admin@goalive.local',
+                        role: 'admin'
+                    };
+                    
+                    showSuccess('✅ Fallback login successful! (Using mock authentication)');
+                    localStorage.setItem('currentUser', JSON.stringify(mockUser));
+                    
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else {
+                    showError('Connection error and invalid test credentials. Use admin@goalive.local / admin123');
+                }
             } finally {
                 loginButton.disabled = false;
                 loginButton.textContent = 'Sign In';

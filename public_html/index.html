@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GO ALIVE MEDIA — Phase 1.8.0 (Admin Dashboard & Analytics)</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --paper:#ffffff; --text:#0f172a; --muted:#475569; --border:#e2e8f0;
+    --brand:#4f46e5; --flare:#ec4899; --aqua:#06b6d4; --ok:#16a34a; --warn:#f59e0b; --danger:#dc2626;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); }
+  header{ position:sticky; top:0; z-index:10; background:rgba(255,255,255,.9); border-bottom:1px solid var(--border); backdrop-filter: blur(6px); }
+  .bar{ height:3px; background:linear-gradient(90deg,var(--brand),var(--flare),var(--aqua)); }
+  .container{ max-width:1200px; margin:0 auto; padding:0 16px; }
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:56px; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .logo{ width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,var(--brand),var(--flare)); color:#fff; display:grid; place-items:center; font-weight:800; }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer; font-weight:600; line-height:1.2; }
+  .btn + .btn{ margin-left:6px; }
+  .btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .btn-primary{ background:linear-gradient(90deg,var(--brand),var(--flare)); color:#fff; border:none; }
+  .btn-danger{ background:#fff; border-color:#fecaca; color:#b91c1c; }
+  .btn-ghost{ background:transparent; border:1px dashed var(--border); }
+  .layout{ display:grid; grid-template-columns:1fr; gap:16px; padding:16px 0 32px; }
+  @media (min-width:1024px){ .layout{ grid-template-columns:280px 1fr; } }
+  .card{ background:var(--paper); border:1px solid var(--border); border-radius:16px; padding:16px; }
+  .panel{ background:var(--paper); border:1px solid var(--border); border-radius:16px; }
+  .panel > .head{ padding:14px 16px; border-bottom:1px solid var(--border); font-weight:800; }
+  .panel > .body{ padding:16px; }
+  .navbtn{ width:100%; text-align:left; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; margin:6px 0; cursor:pointer; font-weight:700; }
+  .navbtn[aria-current="true"]{ background:linear-gradient(135deg,var(--brand),var(--flare) 45%,var(--aqua)); color:#fff; border:none; }
+  .hidden{ display:none !important; }
+  input, select, textarea{ width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:10px; font:14px/1.4 inherit; color:inherit; background:#fff; }
+  input::placeholder, textarea::placeholder{ color:#94a3b8; }
+  label{ font-weight:700; font-size:12px; color:var(--muted); display:block; margin-bottom:6px; letter-spacing:.02em; }
+  textarea{ min-height:90px; resize:vertical; }
+  .rowgrid{ display:grid; gap:14px; }
+  @media (min-width:768px){ .rowgrid-2{ grid-template-columns:1fr 1fr; } .rowgrid-3{ grid-template-columns:repeat(3,1fr);} .rowgrid-4{ grid-template-columns:repeat(4,1fr);} }
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th,td{ border-bottom:1px solid var(--border); padding:10px 10px; text-align:left; vertical-align:middle; }
+  th{ font-size:11px; letter-spacing:.06em; color:#64748b; text-transform:uppercase; }
+  tr:hover td{ background:#f8fafc; }
+  .muted{ color:#64748b; }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:999px; border:1px solid var(--border); background:#f1f5f9; font-size:12px; font-weight:700; color:#0f172a; }
+  .badge-ok{ background:#ecfdf5; border-color:#bbf7d0; color:#065f46; }
+  .badge-warn{ background:#fffbeb; border-color:#fde68a; color:#92400e; }
+  .badge-danger{ background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+  .toast{ position:fixed; right:16px; bottom:16px; background:#111827; color:#fff; padding:10px 14px; border-radius:10px; opacity:0; transform:translateY(6px); transition:.25s ease; z-index:50; }
+  .toast.show{ opacity:1; transform:translateY(0); }
+  .diag{ position:fixed; top:0; left:0; right:0; background:#0f172a; color:#e2e8f0; font-size:12px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; z-index:9999; flex-wrap:wrap; gap:6px; }
+  .diag .btn{ background:transparent; color:#fff; border-color:rgba(255,255,255,.3); }
+  .table-scroll{ width:100%; overflow:auto; border:1px solid var(--border); border-radius:12px; background:#fff; }
+  .danger-row{ background:#fff7f7; }
+  .section-title{ font-weight:900; font-size:16px; margin:0 0 8px 0; }
+  .form-actions{ display:flex; gap:10px; align-items:center; margin-top:8px; }
+  .stat{ display:flex; align-items:center; justify-content:space-between; }
+  .stat .num{ font-weight:900; font-size:22px; }
+  .pill{ display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; font-size:12px; }
+  .link{ color:var(--brand); text-decoration:none; }
+  .topbar{
+    position:sticky; top:0; z-index:1000;
+    display:flex; align-items:center; gap:16px;
+    padding:10px 16px; background:#0f172a; color:#fff;
+    border-bottom:1px solid rgba(255,255,255,.12);
+  }
+  .topbar .tabs a{ color:#cbd5e1; text-decoration:none; margin-right:12px }
+  .topbar .tabs a.active{ color:#fff; font-weight:600; }
+  body{ scroll-padding-top:64px; } /* avoids hidden content under sticky bar */
+</style>
+</head>
+<body>
+  <div class="diag">
+    <div><b>Test Mode</b> — Storage: <b id="dST">?</b></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <span>Role:</span>
+      <button id="roleAdmin" class="btn">Admin</button>
+      <button id="roleSales" class="btn">Sales</button>
+      <button id="roleRJ" class="btn">RJ</button>
+      <button id="roleCollect" class="btn">Collection</button>
+      <span style="margin-left:8px">Open:</span>
+      <button class="btn" data-open="panel-admin">Admin</button>
+      <button class="btn" data-open="panel-dashboard-sales">Sales</button>
+      <button class="btn" data-open="panel-winners">RJ</button>
+      <button class="btn" data-open="panel-collections">Collection</button>
+      <button class="btn" data-open="panel-shows">Shows</button>
+      <button id="revealAll" class="btn">Reveal All</button>
+      <button id="resetApp" class="btn">Reset App</button>
+    </div>
+  </div>
+
+  <header id="topbar" class="topbar">
+    <div class="brand">GO ALIVE MEDIA</div>
+    <nav class="tabs">
+      <a href="#" data-view="admin">Admin</a>
+      <a href="#" data-view="sales">Sales</a>
+      <a href="#" data-view="rj">RJ</a>
+    </nav>
+    <div class="clock" id="serverClock">—</div>
+    <div class="user-block" id="userBlock">
+      <span class="badge" id="userBadge">—</span>
+    </div>
+  </header>
+      <div id="loginError" class="hidden" style="color:#b91c1c;font-size:12px"></div>
+      <button class="btn btn-primary" type="submit">Sign in</button>
+    </div>
+    <div class="muted" style="margin-top:10px;font-size:12px">Tip: Admin demo — admin@goalive.local / admin123</div>
+  </form>
+</div>
+
+
+  <div class="container">
+    <div class="layout">
+      <aside>
+        <div class="card">
+          <div class="muted" style="font-size:12px;letter-spacing:.05em;margin-bottom:6px">Navigation</div>
+          <div id="navGreeting" style="font-size:12px;color:var(--muted);background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px">Signed in as <b id="navUserName">—</b></div>
+          <div id="navList"></div>
+        </div>
+      </aside>
+
+      <main>
+        <!-- ADMIN DASHBOARD -->
+        <section id="panel-admin" class="panel">
+          <div class="head">Admin Dashboard & Analytics</div>
+          <div class="body">
+            <div class="rowgrid rowgrid-4">
+              <div class="card stat"><div><div class="muted">Total Shows</div><div class="num" id="adStatShows">—</div></div><span class="pill">📺 Shows</span></div>
+              <div class="card stat"><div><div class="muted">Active Vouchers</div><div class="num" id="adStatActiveVouchers">—</div></div><span class="pill">🎟️ Vouchers</span></div>
+              <div class="card stat"><div><div class="muted">Winners Declared</div><div class="num" id="adStatWinners">—</div></div><span class="pill">🏆 Winners</span></div>
+              <div class="card stat"><div><div class="muted">Pending Collections</div><div class="num" id="adStatPending">—</div></div><span class="pill">📦 Collections</span></div>
+            </div>
+
+            <div class="rowgrid rowgrid-2" style="margin-top:12px">
+              <div class="card">
+                <div class="section-title">Activity Log</div>
+                <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0">
+                  <div style="flex:1 1 240px"><input id="actSearch" placeholder="Search action / user / message"></div>
+                  <select id="actType" style="flex:0 0 200px">
+                    <option value="">All types</option>
+                    <option>Login</option><option>CreateVouchers</option><option>AllocateVouchers</option><option>WinnerDeclared</option><option>WinnerVerifyToggled</option><option>Collected</option><option>ShowCreated</option><option>ShowEdited</option><option>ShowDeleted</option><option>BatchEdited</option><option>BatchDeleted</option><option>SettingsSaved</option><option>ExportCSV</option>
+                  </select>
+                  <button id="actRefresh" class="btn">Refresh</button>
+                </div>
+                <div class="table-scroll">
+                  <table>
+                    <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr></thead>
+                    <tbody id="activityBody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">Exports (CSV)</div>
+                <div class="rowgrid">
+                  <button class="btn" id="expBatches">Export Voucher Batches</button>
+                  <button class="btn" id="expCodes">Export Voucher Codes</button>
+                  <button class="btn" id="expWinners">Export Winners</button>
+                  <button class="btn" id="expShows">Export Shows</button>
+                  <button class="btn" id="expUsers">Export Users</button>
+                  <button class="btn" id="expActivity">Export Activity Log</button>
+                </div>
+                <div class="muted" style="margin-top:8px">Downloads are generated in-browser as CSV files.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SALES -->
+        <section id="panel-dashboard-sales" class="panel hidden">
+          <div class="head">Sales Dashboard</div>
+          <div class="body rowgrid rowgrid-2">
+            <form id="createVoucherForm" class="card" autocomplete="off">
+              <h3 class="section-title">Create Vouchers</h3>
+              <div class="rowgrid rowgrid-2">
+                <div><label>Client Name</label><input id="cvClient" type="text" required></div>
+                <div><label>Prize Description</label><input id="cvPrize" type="text" required></div>
+                <div><label>Prize Value (BD)</label><input id="cvValue" type="number" step="0.001" placeholder="5.000"></div>
+                <div><label>Expiry Date</label><input id="cvExpiry" type="date" required></div>
+                <div><label>No. of Vouchers</label><input id="cvQty" type="number" min="1" max="999" required></div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Create Vouchers</button>
+                <span id="cvError" class="hidden" style="color:#b91c1c"></span>
+              </div>
+            </form>
+
+            <form id="allocateForm" class="card">
+              <h3 class="section-title">Allocate to Show</h3>
+              <div class="rowgrid rowgrid-2">
+                <div><label>Voucher Batch</label><select id="alBatch"></select></div>
+                <div><label>Show</label><select id="alShow"></select></div>
+                <div><label>Quantity to Allocate</label><input id="alQty" type="number" min="1" required></div>
+                <div><label>Schedule Date</label><input id="alDate" type="date" value=""></div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Allocate</button>
+                <div id="alError" class="hidden" style="color:#b91c1c"></div>
+              </div>
+            </form>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="muted" style="margin-bottom:6px">Voucher Inventory (Batches)</div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Voucher IDs</th><th>Client</th><th>Prize</th><th>Value</th><th>Expiry</th><th>Used / Total</th><th>Allocations</th><th>Actions</th></tr></thead>
+                <tbody id="voucherList"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="row" style="gap:8px; flex-wrap:wrap; align-items:center">
+              <div class="muted" style="font-weight:800">Voucher Codes (Expanded)</div>
+              <div style="flex:1 1 280px"><input id="codeSearch" placeholder="Search code / show / winner / client / prize"></div>
+              <label style="display:flex;align-items:center;gap:6px"><input id="codeFilterAvail" type="checkbox"> Available only</label>
+              <button id="codeRefresh" class="btn">Refresh</button>
+            </div>
+            <div class="table-scroll" style="margin-top:8px">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Code</th><th>Client</th><th>Prize</th><th>Value</th>
+                    <th>Expiry</th><th>Status</th><th>Show / Winner</th>
+                  </tr>
+                </thead>
+                <tbody id="codeList"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- RJ -->
+        <section id="panel-winners" class="panel hidden">
+          <div class="head">Winner Declaration</div>
+          <div class="body">
+            <div class="card" style="margin-bottom:10px">
+              <div><span class="badge">RJ</span> <b id="rjWho">—</b></div>
+              <div class="muted" style="font-size:12px">If no voucher appears, make sure Sales allocated vouchers to your show(s) for today or earlier.</div>
+            </div>
+
+            <form id="winnerForm" class="card">
+              <div class="rowgrid rowgrid-2">
+                <div><label>Winner Name</label><input id="winnerName" type="text" required></div>
+                <div class="rowgrid rowgrid-2">
+                  <div><label>Country Code</label><input id="phoneCC" type="text" value="+973"></div>
+                  <div><label>Telephone</label><input id="phoneLocal" type="tel" placeholder="12345678"></div>
+                </div>
+                <div>
+                  <label>Next Assigned Voucher (auto)</label>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <div id="autoVoucherDisplay" class="badge" style="padding:8px;min-width:220px">—</div>
+                    <input type="hidden" id="autoVoucherValue">
+                    <button type="button" id="btnRefreshRJ" class="btn">Refresh</button>
+                  </div>
+                  <div id="noRJVoucherMsg" class="hidden" style="color:#b91c1c;font-size:12px;margin-top:6px">No vouchers scheduled for today.</div>
+                </div>
+                <div><label>Contest Type</label><select id="contestType"><option>On-Air</option><option>Call-in</option><option>WhatsApp</option><option>Digital</option><option>Other</option></select></div>
+              </div>
+              <div class="form-actions"><button class="btn btn-primary" type="submit">Declare Winner</button> <span id="winnerFormError" class="hidden" style="color:#b91c1c;margin-left:8px"></span></div>
+            </form>
+
+            <div class="card" style="margin-top:12px">
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th>Winner ID</th><th>Winner</th><th>Voucher</th><th>Contest</th><th>Date</th><th>Actions</th></tr></thead>
+                  <tbody id="winnersList"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- COLLECTIONS -->
+        <section id="panel-collections" class="panel hidden">
+          <div class="head">Prize Collection</div>
+          <div class="body">
+            <div class="rowgrid rowgrid-4">
+              <div class="card"><div class="muted">Pending</div><div id="statPending" style="font-weight:900;font-size:20px">0</div></div>
+              <div class="card"><div class="muted">Overdue</div><div id="statOverdue" style="font-weight:900;font-size:20px">0</div></div>
+              <div class="card"><div class="muted">Collected Total</div><div id="statCollectedTotal" style="font-weight:900;font-size:20px">0</div></div>
+              <div class="card"><div class="muted">Verified</div><div id="statVerified" style="font-weight:900;font-size:20px">0</div></div>
+            </div>
+            <div class="row" style="gap:12px;margin-top:12px;flex-wrap:wrap">
+              <div style="flex:1 1 320px"><label>Search</label><input id="collectionSearch" type="text" placeholder="Winner / phone / voucher / client"></div>
+              <label style="display:flex;align-items:center;gap:6px"><input id="filterVerified" type="checkbox"> Verified only</label>
+              <label style="display:flex;align-items:center;gap:6px"><input id="filterOverdue" type="checkbox"> Overdue only</label>
+            </div>
+            <div class="card" style="margin-top:12px">
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th>Winner</th><th>Phone</th><th>Voucher</th><th>Deadline</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody id="pendingCollections"></tbody>
+                </table>
+              </div>
+            </div>
+            <h3 style="margin-top:16px">Collection History</h3>
+            <div class="card">
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th>Winner</th><th>Voucher</th><th>Collected</th><th>ID Type</th><th>Notes</th><th>Processed By</th></tr></thead>
+                  <tbody id="collectionHistory"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SHOWS -->
+        <section id="panel-shows" class="panel hidden">
+          <div class="head">📺 Show Management</div>
+          <div class="body">
+            <form id="showForm" class="card">
+              <div class="rowgrid rowgrid-2">
+                <div><label>Show Name</label><input id="showName" type="text" required></div>
+                <div><label>Status</label><select id="showStatus"><option>Active</option><option>Paused</option><option>Ended</option></select></div>
+              </div>
+              <div class="rowgrid rowgrid-3" style="margin-top:8px">
+                <div>
+                  <label>Days</label>
+                  <div id="showDays" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                </div>
+                <div><label>Start from</label><input id="showStart" type="time" required></div>
+                <div><label>Until</label><input id="showEnd" type="time" required></div>
+              </div>
+              <div style="margin-top:8px">
+                <label>RJ Assignment</label>
+                <div id="showRJContainer" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+              </div>
+              <div class="form-actions"><button class="btn btn-primary" type="submit">Create Show</button> <span id="showFormError" class="hidden" style="color:#b91c1c;margin-left:8px"></span></div>
+            </form>
+            <div class="card" style="margin-top:12px">
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th>Show ID</th><th>Name</th><th>Status</th><th>Schedule</th><th>RJs</th><th>Actions</th></tr></thead>
+                  <tbody id="showsList"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- USERS -->
+        <section id="panel-users" class="panel hidden">
+          <div class="head">👤 User Management</div>
+          <div class="body">
+            <form id="userForm" class="card">
+              <div class="rowgrid rowgrid-3">
+                <div><label>Name</label><input id="uName" required></div>
+                <div><label>Email</label><input id="uEmail" type="email" required></div>
+                <div><label>Role</label>
+                  <select id="uRole">
+                    <option>Admin</option><option>Sales</option><option>RJ</option><option>Collection</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions"><button class="btn btn-primary" type="submit">Add User</button><span id="uErr" class="hidden" style="color:#b91c1c"></span></div>
+            </form>
+
+            <div class="card" style="margin-top:12px">
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Activity</th><th>Actions</th></tr></thead>
+                  <tbody id="usersList"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="panel-settings" class="panel hidden">
+          <div class="head">⚙️ System Settings</div>
+          <div class="body">
+            <form id="settingsForm" class="card">
+              <div class="rowgrid rowgrid-3">
+                <div><label>Voucher Prefix</label><input id="setVoucherPrefix" placeholder="VCH-2024-"></div>
+                <div><label>Expiry Alert (days)</label><input id="setExpiryAlert" type="number" min="1" value="3"></div>
+                <div><label>Collection Deadline (days)</label><input id="setCollectDays" type="number" min="1" value="14"></div>
+                <div><label>Pickup Day</label><input id="setPickupDay" placeholder="Saturday"></div>
+                <div><label>Pickup Start</label><input id="setPickupStart" type="time" value="10:00"></div>
+                <div><label>Pickup End</label><input id="setPickupEnd" type="time" value="13:00"></div>
+                <div><label>Contact Phone</label><input id="setPhone" placeholder="34581072"></div>
+                <div><label>WhatsApp Country Code</label><input id="setWA" placeholder="+973"></div>
+                <div><label>Office Address</label><input id="setAddress" placeholder=""></div>
+              </div>
+              <div class="form-actions"><button class="btn btn-primary" type="submit">Save Settings</button></div>
+            </form>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"><span id="toastMsg">Saved</span></div>
+
+  <!-- Edit Batch Modal -->
+  <div id="batchModal" class="hidden" style="position:fixed;inset:0;display:grid;place-items:center;background:rgba(15,23,42,.55);z-index:1000">
+    <div class="card" style="width:min(560px,95vw)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0">Edit Voucher Batch</h3>
+        <button id="closeBatchModal" class="btn">✕</button>
+      </div>
+      <div id="batchIdDisplay" class="muted" style="margin-top:4px"></div>
+      <form id="batchEditForm" class="rowgrid rowgrid-2" style="margin-top:10px">
+        <input type="hidden" id="batchEditId" />
+        <div><label>Client Name</label><input id="beClient" type="text" required></div>
+        <div><label>Prize Description</label><input id="bePrize" type="text" required></div>
+        <div><label>Prize Value (BD)</label><input id="beValue" type="number" step="0.001" placeholder="5.000"></div>
+        <div><label>Expiry Date</label><input id="beExpiry" type="date" required></div>
+        <div style="grid-column:1/-1" class="form-actions">
+          <button class="btn btn-primary" type="submit">Save Changes</button>
+          <span id="beError" class="hidden" style="color:#b91c1c"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Show Modal -->
+  <div id="showModal" class="hidden" style="position:fixed;inset:0;display:grid;place-items:center;background:rgba(15,23,42,.55);z-index:1000">
+    <div class="card" style="width:min(620px,95vw)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0">Edit Show</h3>
+        <button id="closeShowModal" class="btn">✕</button>
+      </div>
+      <div id="editShowId" class="muted" style="margin-top:4px"></div>
+      <form id="showEditForm" class="rowgrid rowgrid-2" style="margin-top:10px">
+        <input type="hidden" id="seId" />
+        <div><label>Name</label><input id="seName" required></div>
+        <div><label>Status</label><select id="seStatus"><option>Active</option><option>Paused</option><option>Ended</option></select></div>
+        <div><label>Start</label><input id="seStart" type="time"></div>
+        <div><label>Until</label><input id="seEnd" type="time"></div>
+        <div style="grid-column:1/-1"><label>Days (comma-separated 0-6)</label><input id="seDays" placeholder="e.g. 0,1,2 for Sun,Mon,Tue"></div>
+        <div style="grid-column:1/-1"><label>RJ Emails (comma-separated)</label><input id="seRJs"></div>
+        <div style="grid-column:1/-1" class="form-actions"><button class="btn btn-primary" type="submit">Save</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Collection Modal -->
+  <div id="collectModal" class="hidden" style="position:fixed;inset:0;display:grid;place-items:center;background:rgba(15,23,42,.55);z-index:1000">
+    <div class="card" style="width:min(560px,95vw)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0">Process Collection</h3>
+        <button id="closeCollectModal" class="btn">✕</button>
+      </div>
+      <div id="collectWinnerInfo" class="muted" style="margin-top:4px"></div>
+      <form id="collectForm" class="rowgrid rowgrid-2" style="margin-top:10px">
+        <input type="hidden" id="collectWinnerId">
+        <div><label>ID Type</label>
+          <select id="collectIdType">
+            <option value="CPR">CPR</option>
+            <option value="Passport">Passport</option>
+            <option value="Driver License">Driver License</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div><label>Verified</label>
+          <select id="collectVerified">
+            <option value="true">Verified</option>
+            <option value="false">Unverified</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1"><label>Collection Notes</label><textarea id="collectNotes" placeholder="Any notes..."></textarea></div>
+        <div style="grid-column:1/-1" class="form-actions">
+          <button class="btn btn-primary" id="btnMarkCollected" type="button">Mark as Collected</button>
+          <span id="collectError" class="hidden" style="color:#b91c1c"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+(function(){
+  var __mem = {}; var storageOK = true;
+  try{ localStorage.setItem('_probe','1'); localStorage.removeItem('_probe'); document.getElementById('dST').textContent='OK'; }
+  catch(e){ storageOK=false; document.getElementById('dST').textContent='Blocked'; }
+  function getStore(k){ try{ return storageOK? localStorage.getItem(k): __mem[k] || null; }catch(e){ return __mem[k]||null; } }
+  function setStore(k,v){ try{ if(storageOK) localStorage.setItem(k,v); else __mem[k]=v; }catch(e){ __mem[k]=v; } }
+  function jget(key, defVal){ var s=getStore(key); if(!s) return defVal; try{ return JSON.parse(s); }catch(e){ return defVal; } }
+  function jset(key, val){ setStore(key, JSON.stringify(val)); }
+
+  function $(id){ return document.getElementById(id); }
+  function hide(id){ var el=$(id); if(el) el.classList.add('hidden'); }
+  function show(id){ var el=$(id); if(el) el.classList.remove('hidden'); }
+  function pad3(n){ return String(n).padStart(3,'0'); }
+  function todayISO(){ var d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+  function addDaysISO(iso, days){ var d=new Date(iso); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+  function minISO(a,b){ return (a<b)?a:b; }
+  function toast(msg){ var t=$('toast'), m=$('toastMsg'); m.textContent=msg; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 2200); }
+  function canonicalRole(role){ var map={ 'Admin':'Admin','Sales':'Sales','RJ':'RJ','Collection':'Collection' }; return map[role]||'Admin'; }
+  function formatBD(v){ if(v===undefined||v===null||v==='') return '—'; return 'BD '+(Number(v)||0).toFixed(3); }
+  function daysLeft(dateStr){ var t=new Date(todayISO()); var d=new Date(dateStr+'T00:00:00'); return Math.floor((d-t)/(1000*60*60*24)); }
+  function nextSaturdayISO(fromISO){
+    var d=new Date(fromISO||todayISO()); var day=d.getDay(); // 6 = Saturday
+    var add = (6 - day + 7) % 7; if(add===0) add = 7;
+    d.setDate(d.getDate()+add); d.setHours(0,0,0,0); return d.toISOString().slice(0,10);
+  }
+  function isoToNice(iso){
+    var d=new Date(iso+'T00:00:00'); var dd=d.getDate().toString().padStart(2,'0'); var mm=(d.getMonth()+1).toString().padStart(2,'0'); var yy=d.getFullYear();
+    return dd+'-'+mm+'-'+yy;
+  }
+
+  // ===== Settings =====
+  var SETTINGS_KEY='ga_settings';
+  function defaultSettings(){
+    return {
+      voucherPrefix:'VCH-2024-',
+      expiryAlertDays:3,
+      collectionDeadlineDays:14,
+      pickupDay:'Saturday',
+      pickupStart:'10:00',
+      pickupEnd:'13:00',
+      contactPhone:'34581072',
+      whatsappCC:'+973',
+      officeAddress:''
+    };
+  }
+  function getSettings(){ return Object.assign(defaultSettings(), jget(SETTINGS_KEY, {})); }
+  function setSettings(s){ jset(SETTINGS_KEY, s); logActivity('SettingsSaved','Updated system settings'); emitDataChange(); }
+
+  // ===== Core datasets =====
+  var KEYS={ session:'ga_session', shows:'ga_shows', showsSeq:'ga_show_seq', vouchers:'ga_vouchers', vouchersSeq:'ga_voucher_seq', winners:'ga_winners', winnersSeq:'ga_winner_seq', users:'ga_users', usersSeq:'ga_user_seq', activity:'ga_activity' };
+
+  function bump(key){ var n=parseInt(getStore(key)||'0',10)+1; setStore(key,String(n)); return n; }
+  function nextShowId(){ return 'SHW-2024-'+pad3(bump(KEYS.showsSeq)); }
+  function nextWinnerId(){ return 'WIN-2024-'+pad3(bump(KEYS.winnersSeq)); }
+  function nextUserId(){ return 'USR-2024-'+pad3(bump(KEYS.usersSeq)); }
+
+  function getShows(){ return jget(KEYS.shows, []); }
+  function setShows(a){ jset(KEYS.shows, a); emitDataChange(); }
+  function getVouchers(){ return jget(KEYS.vouchers, []); }
+  function setVouchers(a){ jset(KEYS.vouchers, a); emitDataChange(); }
+  function getWinners(){ return jget(KEYS.winners, []); }
+  function setWinners(a){ jset(KEYS.winners, a); emitDataChange(); }
+  function getUsers(){ 
+    var u=jget(KEYS.users, null);
+    if(!u){
+      u=[
+        {id:nextUserId(), name:'Ava Admin', email:'admin@goalive.local', role:'Admin', active:true, lastLogin:null, createdAt:new Date().toISOString()},
+        {id:nextUserId(), name:'Sam Sales', email:'sales@goalive.local', role:'Sales', active:true, lastLogin:null, createdAt:new Date().toISOString()},
+        {id:nextUserId(), name:'Ria RJ', email:'rj@goalive.local', role:'RJ', active:true, lastLogin:null, createdAt:new Date().toISOString()},
+        {id:nextUserId(), name:'Colin Collection', email:'collect@goalive.local', role:'Collection', active:true, lastLogin:null, createdAt:new Date().toISOString()}
+      ];
+      jset(KEYS.users,u);
+    }
+    return jget(KEYS.users, []);
+  }
+  function setUsers(a){ jset(KEYS.users, a); emitDataChange(); }
+
+  // ===== Activity log =====
+  function getActivity(){ return jget(KEYS.activity, []); }
+  function setActivity(a){ jset(KEYS.activity, a); }
+  function logActivity(type, message, meta){
+    var s=jget(KEYS.session,{}); 
+    var entry={ id:'ACT-'+Date.now(), ts: new Date().toISOString(), type:type, actor:(s.email||'system'), role:(s.role||'system'), message: message||'', meta: meta||null };
+    var arr=getActivity(); arr.push(entry); setActivity(arr);
+    renderActivity(); updateAdminStats();
+  }
+
+  // ===== Session & Nav =====
+  function applySession(session){
+    if(!session) return;
+    session.role=canonicalRole(session.role); jset(KEYS.session, session);
+    $('userBadge').textContent=session.name+' • '+session.role;
+    buildNav(session.role);
+    $('navUserName').textContent=session.name;
+    var users=getUsers(); var i=users.findIndex(function(u){return (u.email||'').toLowerCase()===(session.email||'').toLowerCase();});
+    if(i!==-1){ users[i].lastLogin=new Date().toISOString(); setUsers(users); }
+    logActivity('Login','User signed in');
+    if(session.role==='RJ'){ $('rjWho').textContent=session.email; }
+  }
+  function buildNav(role){
+    var list=$('navList'); list.innerHTML='';
+    var NAV={
+      Admin:[['Admin Dashboard','panel-admin'],['Show Management','panel-shows'],['User Management','panel-users'],['System Settings','panel-settings'],['Sales — Create & Allocate','panel-dashboard-sales'],['Winner Declaration','panel-winners'],['Prize Collection','panel-collections']],
+      Sales:[['Sales — Create & Allocate','panel-dashboard-sales']],
+      RJ:[['Winner Declaration','panel-winners']],
+      Collection:[['Prize Collection','panel-collections']]
+    };
+    (NAV[role]||[]).forEach(function(it,idx){
+      var btn=document.createElement('button'); btn.className='navbtn'; btn.textContent=it[0]; btn.setAttribute('data-target',it[1]); if(idx===0) btn.setAttribute('aria-current','true');
+      btn.onclick=function(){ var act=list.querySelector('.navbtn[aria-current="true"]'); if(act) act.removeAttribute('aria-current'); btn.setAttribute('aria-current','true'); showPanel(it[1]); };
+      list.appendChild(btn);
+    });
+  }
+
+  function showPanel(id){
+    var ids=['panel-admin','panel-dashboard-sales','panel-winners','panel-collections','panel-shows','panel-users','panel-settings'];
+    ids.forEach(function(pid){ hide(pid); });
+    show(id);
+    if(id==='panel-dashboard-sales'){ renderVouchers(); renderCodes(); rebuildAllocateSelectors(); }
+    if(id==='panel-winners'){ updateRJAutoVoucher(); renderWinners(); }
+    if(id==='panel-shows'){ renderShows(); buildDayCheckboxes('#showDays'); buildRJOptions(); }
+    if(id==='panel-collections'){ renderCollections(); }
+    if(id==='panel-admin'){ updateAdminStats(); renderActivity(); }
+    if(id==='panel-users'){ renderUsers(); }
+    if(id==='panel-settings'){ loadSettingsForm(); }
+  }
+  window.showPanel=showPanel;
+
+  function switchRole(role){
+    var demo = {
+      Admin:{ email:'admin@goalive.local', name:'Ava Admin', role:'Admin' },
+      Sales:{ email:'sales@goalive.local', name:'Sam Sales', role:'Sales' },
+      RJ:{ email:'rj@goalive.local', name:'Ria RJ', role:'RJ' },
+      Collection:{ email:'collect@goalive.local', name:'Colin Collection', role:'Collection' }
+    }[canonicalRole(role)];
+    applySession(demo); toast('Role: '+demo.role);
+    showPanel(demo.role==='Admin'?'panel-admin': (demo.role==='Sales'?'panel-dashboard-sales': (demo.role==='RJ'?'panel-winners':'panel-collections')));
+  }
+  $('roleAdmin').onclick=function(){ switchRole('Admin'); };
+  $('roleSales').onclick=function(){ switchRole('Sales'); };
+  $('roleRJ').onclick=function(){ switchRole('RJ'); };
+  $('roleCollect').onclick=function(){ switchRole('Collection'); };
+  $('revealAll').onclick=function(){ Array.prototype.slice.call(document.querySelectorAll('.hidden')).forEach(function(el){ el.classList.remove('hidden'); }); };
+  $('resetApp').onclick=function(){ if(confirm('Clear all data & reset?')){ try{ localStorage.clear(); }catch(e){} __mem={}; location.reload(); } };
+
+  // ===== Day checkboxes =====
+  function buildDayCheckboxes(sel){
+    var wrap=document.querySelector(sel); if(!wrap) return; wrap.innerHTML='';
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function(lbl,idx){
+      var lab=document.createElement('label');
+      lab.style.display='inline-flex'; lab.style.alignItems='center'; lab.style.gap='6px';
+      lab.style.border='1px solid var(--border)'; lab.style.borderRadius='8px'; lab.style.padding='6px 8px';
+      lab.innerHTML='<input type="checkbox" value="'+idx+'"> <span>'+lbl+'</span>';
+      wrap.appendChild(lab);
+    });
+  }
+
+  // ===== Users =====
+  function renderUsers(){
+    var tb=$('usersList'); var users=getUsers().slice().reverse(); var acts=getActivity();
+    tb.innerHTML='';
+    users.forEach(function(u){
+      var count=acts.filter(function(a){ return (a.actor||'').toLowerCase()===(u.email||'').toLowerCase(); }).length;
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td><b>'+u.name+'</b><div class="muted">'+u.id+'</div></td><td>'+u.email+'</td><td>'+u.role+'</td><td>'+(u.active?'<span class="badge badge-ok">Active</span>':'<span class="badge badge-danger">Disabled</span>')+'</td><td>'+(u.lastLogin? new Date(u.lastLogin).toLocaleString():'—')+'</td><td>'+count+'</td><td><button class="btn reset-pass" data-id="'+u.id+'">Reset Password</button> <button class="btn '+(u.active?'btn-danger':'')+' toggle-user" data-id="'+u.id+'">'+(u.active?'Disable':'Enable')+'</button> <button class="btn btn-danger del-user" data-id="'+u.id+'">Delete</button></td>';
+      tb.appendChild(tr);
+    });
+  }
+  $('usersList').addEventListener('click', function(e){
+    var t=e.target;
+    var users=getUsers(); var id=t.dataset.id; var i=users.findIndex(function(x){return x.id===id;});
+    if(i===-1) return;
+    if(t.classList.contains('reset-pass')){
+      var temp='GA-'+Math.random().toString(36).slice(2,8).toUpperCase();
+      users[i].tempPassword=temp; setUsers(users);
+      logActivity('UserPasswordReset','Temp password set for '+users[i].email, {userId:id});
+      alert('Temporary password for '+users[i].email+': '+temp);
+    } else if(t.classList.contains('toggle-user')){
+      users[i].active=!users[i].active; setUsers(users);
+      logActivity('UserToggled', (users[i].active?'Enabled ':'Disabled ')+users[i].email, {userId:id, active:users[i].active});
+      renderUsers(); toast('User updated');
+    } else if(t.classList.contains('del-user')){
+      if(users[i].role==='Admin' && users.filter(function(u){return u.role==='Admin' && u.id!==id;}).length===0){ alert('Cannot delete the last Admin.'); return; }
+      if(!confirm('Delete '+users[i].email+'?')) return;
+      var email=users[i].email; users.splice(i,1); setUsers(users); logActivity('UserDeleted','Deleted '+email); renderUsers(); toast('User deleted');
+    }
+  });
+  $('userForm').onsubmit=function(e){
+    e.preventDefault(); var err=$('uErr'); err.classList.add('hidden'); err.textContent='';
+    var name=$('uName').value.trim(), email=$('uEmail').value.trim(), role=$('uRole').value;
+    if(!name||!email){ err.textContent='Name and email required'; err.classList.remove('hidden'); return; }
+    var users=getUsers(); if(users.some(function(u){ return (u.email||'').toLowerCase()===email.toLowerCase(); })){ err.textContent='Email already exists'; err.classList.remove('hidden'); return; }
+    var temp = Math.random().toString(36).slice(-8);
+    var u={ id: nextUserId(), name:name, email:email, role:role, active:true, tempPassword:temp, lastLogin:null, createdAt:new Date().toISOString() };
+    users.push(u); setUsers(users); logActivity('UserCreated','Added '+email); e.target.reset(); renderUsers(); toast('User added');
+  };
+
+  // ===== Shows =====
+  var showsList=$('showsList');
+  function groupDays(days){
+    if(!Array.isArray(days)||!days.length) return '—';
+    var d=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var s=[].concat(days).sort(function(a,b){return a-b;});
+    var out=[], start=s[0], prev=s[0];
+    for(var i=1;i<s.length;i++){
+      var c=s[i];
+      if(c===prev+1){ prev=c; continue; }
+      out.push([start,prev]); start=prev=c;
+    }
+    out.push([start,prev]);
+    return out.map(function(ab){ return ab[0]===ab[1]? d[ab[0]]: d[ab[0]]+'–'+d[ab[1]]; }).join(', ');
+  }
+  function fmtSchedule(sc){
+    if(sc&&Array.isArray(sc.days)){ return groupDays(sc.days)+' '+(sc.start||'').slice(0,5)+'–'+(sc.end||'').slice(0,5); }
+    return '—';
+  }
+  function renderShows(){
+    var arr=getShows().slice().reverse(); showsList.innerHTML='';
+    if(arr.length===0){ showsList.innerHTML='<tr><td colspan="6" class="muted">No shows yet.</td></tr>'; return; }
+    arr.forEach(function(sh){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td><b>'+sh.showId+'</b></td><td>'+sh.name+'</td><td>'+sh.status+'</td><td>'+fmtSchedule(sh.schedule)+'</td><td>'+(sh.rjEmails||[]).join(', ')+'</td><td><button class="btn edit-show" data-id="'+sh.showId+'">Edit</button> <button class="btn btn-danger del-show" data-id="'+sh.showId+'">Delete</button></td>';
+      showsList.appendChild(tr);
+    });
+  }
+  $('showForm').onsubmit = function(e){
+    e.preventDefault();
+    var name=$('showName').value.trim();
+    var status=$('showStatus').value;
+    var start=$('showStart').value;
+    var end=$('showEnd').value;
+    var days=Array.prototype.slice.call(document.querySelectorAll('#showDays input:checked')).map(function(i){return parseInt(i.value,10);});
+    var rjEmails=Array.prototype.slice.call(document.querySelectorAll('#showRJContainer input:checked')).map(function(i){return i.value;});
+    if(!name){ var err=$('showFormError'); err.textContent='Show name is required'; err.classList.remove('hidden'); return; }
+    var sh={ showId: nextShowId(), name:name, status:status, schedule:{days:days, start:start, end:end}, rjEmails:rjEmails, createdAt:new Date().toISOString() };
+    var shows=getShows(); shows.push(sh); setShows(shows); logActivity('ShowCreated','Created '+sh.showId+' '+name);
+    e.target.reset(); buildDayCheckboxes('#showDays'); buildRJOptions(); renderShows(); updateAdminStats(); toast('Show '+sh.showId+' created');
+  };
+  $('showsList').addEventListener('click', function(e){
+    var t=e.target; var id=t.dataset.id; if(!id) return;
+    var shows=getShows(); var i=shows.findIndex(function(s){return s.showId===id;}); if(i===-1) return;
+    if(t.classList.contains('edit-show')){
+      $('seId').value=shows[i].showId; $('editShowId').textContent=shows[i].showId;
+      $('seName').value=shows[i].name; $('seStatus').value=shows[i].status;
+      $('seStart').value=shows[i].schedule && shows[i].schedule.start || ''; $('seEnd').value=shows[i].schedule && shows[i].schedule.end || '';
+      $('seDays').value=(shows[i].schedule && Array.isArray(shows[i].schedule.days)? shows[i].schedule.days.join(','):'');
+      $('seRJs').value=(shows[i].rjEmails||[]).join(',');
+      show('showModal');
+    } else if(t.classList.contains('del-show')){
+      if(!confirm('Delete '+shows[i].showId+'?')) return;
+      var name=shows[i].name;
+      shows.splice(i,1); setShows(shows); logActivity('ShowDeleted','Deleted '+id+' '+name); renderShows(); updateAdminStats(); toast('Show deleted');
+    }
+  });
+  $('closeShowModal').onclick=function(){ hide('showModal'); };
+  $('showEditForm').onsubmit=function(e){
+    e.preventDefault();
+    var id=$('seId').value, name=$('seName').value.trim(), status=$('seStatus').value, start=$('seStart').value, end=$('seEnd').value;
+    var daysStr=$('seDays').value.trim(); var days=daysStr? daysStr.split(',').map(function(s){return parseInt(s,10);}).filter(function(x){return !isNaN(x);}):[];
+    var rjs=($('seRJs').value||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    var shows=getShows(); var i=shows.findIndex(function(s){return s.showId===id;}); if(i===-1) return;
+    shows[i].name=name; shows[i].status=status; shows[i].schedule={days:days, start:start, end:end}; shows[i].rjEmails=rjs; setShows(shows); logActivity('ShowEdited','Edited '+id);
+    hide('showModal'); renderShows(); updateAdminStats(); toast('Show updated');
+  };
+
+  // RJ options
+  function buildRJOptions(){
+    var cont=$('showRJContainer'); cont.innerHTML='';
+    getUsers().filter(function(u){return u.role==='RJ' && u.active;}).forEach(function(r){
+      var lab=document.createElement('label');
+      lab.style.display='inline-flex'; lab.style.alignItems='center'; lab.style.gap='6px';
+      lab.style.border='1px solid var(--border)'; lab.style.borderRadius='8px'; lab.style.padding='6px 8px';
+      lab.innerHTML='<input type="checkbox" value="'+r.email+'"> <span>'+r.name+' ('+r.email+')</span>';
+      cont.appendChild(lab);
+    });
+  }
+
+  // ===== Voucher Creation / Allocation =====
+  function batchPrefix(v){ var idx=v.voucherId.lastIndexOf('-'); return v.voucherId.slice(0, idx+1); }
+  function voucherCodeFrom(v, seq){ return batchPrefix(v)+pad3(seq); }
+  function formatRange(v){ return voucherCodeFrom(v, v.startSeq)+'–'+pad3(v.endSeq); }
+  var cvForm=$('createVoucherForm'), cvErr=$('cvError');
+  if(cvForm) cvForm.onsubmit=function(e){
+    e.preventDefault();
+    cvErr.textContent=''; cvErr.classList.add('hidden');
+    var client=$('cvClient').value.trim();
+    var prize=$('cvPrize').value.trim();
+    var valStr=$('cvValue').value;
+    var value=(valStr==='')? null : parseFloat(valStr);
+    var expiry=$('cvExpiry').value;
+    var qty=parseInt($('cvQty').value,10);
+    if(!client || !prize || !expiry || !(qty>0)){
+      cvErr.textContent='Please fill Client, Prize, Expiry and a valid Quantity.';
+      cvErr.classList.remove('hidden'); return;
+    }
+    var seq=parseInt(getStore(KEYS.vouchersSeq)||'0',10);
+    var start=seq+1, end=start+qty-1;
+    var prefix=getSettings().voucherPrefix||'VCH-2024-';
+    var batch={
+      voucherId: prefix+pad3(start),
+      startSeq:start,
+      endSeq:end,
+      clientName:client,
+      prizeDescription:prize,
+      prizeValue:value,
+      expiryDate:expiry,
+      status:'Active',
+      qty:qty,
+      used:0,
+      assignedSeqs:[],
+      allocations:[],
+      createdAt:new Date().toISOString()
+    };
+    var vouchers=getVouchers(); vouchers.push(batch); setVouchers(vouchers); setStore(KEYS.vouchersSeq, String(end));
+    e.target.reset();
+    renderVouchers(); renderCodes(); updateAdminStats();
+    logActivity('CreateVouchers','Created '+qty+' vouchers '+formatRange(batch), {batch:batch.voucherId});
+    toast('Created '+qty+' vouchers: '+formatRange(batch));
+  };
+
+  function freeSequences(v){
+    var assigned=new Set(v.assignedSeqs||[]);
+    var taken=new Set();
+    (v.allocations||[]).forEach(function(a){ for(var s=a.fromSeq; s<=a.toSeq; s++) taken.add(s); });
+    var free=[]; for(var s=v.startSeq; s<=v.endSeq; s++){ if(!assigned.has(s) && !taken.has(s)) free.push(s); }
+    return free;
+  }
+  function coalesceToRanges(seqList){
+    if(seqList.length===0) return []; seqList.sort(function(a,b){return a-b;});
+    var ranges=[], start=seqList[0], prev=seqList[0];
+    for(var i=1;i<seqList.length;i++){ var cur=seqList[i]; if(cur===prev+1){ prev=cur; continue; } ranges.push([start,prev]); start=prev=cur; }
+    ranges.push([start,prev]); return ranges;
+  }
+  function allocationsLines(v){
+    if(!v.allocations || v.allocations.length===0) return '—';
+    var shows=getShows();
+    return v.allocations.slice().sort(function(a,b){
+      if(a.showId<b.showId) return -1; if(a.showId>b.showId) return 1; return a.fromSeq-b.fromSeq;
+    }).map(function(a){
+      var name=(shows.find(function(s){return s.showId===a.showId;})||{}).name||a.showId;
+      var range=voucherCodeFrom(v,a.fromSeq)+'–'+pad3(a.toSeq);
+      var count=a.toSeq-a.fromSeq+1;
+      var sched=a.effectiveDate? (' <span class="badge">From '+a.effectiveDate+'</span>') : '';
+      return '<div style="margin:2px 0">'+name+': <b>'+range+'</b> <span class="muted">('+count+')</span>'+sched+'</div>';
+    }).join('');
+  }
+  function renderVouchers(){
+    var tb=$('voucherList'); var arr=getVouchers().slice().reverse(); tb.innerHTML='';
+    if(arr.length===0){ tb.innerHTML='<tr><td class="muted" colspan="8">No vouchers yet. Create a batch at left.</td></tr>'; return; }
+    var alertDays=getSettings().expiryAlertDays||3;
+    arr.forEach(function(v){
+      var dleft=daysLeft(v.expiryDate);
+      var badge = dleft<0? '<span class="badge badge-danger">Expired</span>' : (dleft===0? '<span class="badge badge-warn">Due today</span>' : (dleft<=alertDays? '<span class="badge badge-warn">'+dleft+'d left</span>':''));
+      var tr=document.createElement('tr'); if(dleft<=alertDays) tr.className='danger-row';
+      tr.innerHTML='<td><b>'+formatRange(v)+'</b></td><td>'+v.clientName+'</td><td>'+v.prizeDescription+'</td><td>'+formatBD(v.prizeValue)+'</td><td>'+v.expiryDate+' '+(badge||'')+'</td><td><b>'+(v.used||0)+'</b> / <b>'+(v.qty||1)+'</b></td><td>'+allocationsLines(v)+'</td><td><button class="btn btn-ghost edit-batch" data-id="'+v.voucherId+'">Edit</button><button class="btn btn-danger delete-batch" data-id="'+v.voucherId+'">Delete</button></td>';
+      tb.appendChild(tr);
+    });
+    rebuildAllocateSelectors();
+  }
+  function rebuildAllocateSelectors(){
+    var selB=$('alBatch'), selS=$('alShow'), alDate=$('alDate'); if(!selB||!selS) return; selB.innerHTML=''; selS.innerHTML='';
+    getVouchers().forEach(function(v){ var free=freeSequences(v).length; var opt=document.createElement('option'); opt.value=v.voucherId; opt.textContent=formatRange(v)+' — '+v.clientName+' ('+free+' free)'; selB.appendChild(opt); });
+    getShows().forEach(function(s){ var opt=document.createElement('option'); opt.value=s.showId; opt.textContent=s.name; selS.appendChild(opt); });
+    if(alDate && !alDate.value) alDate.value=todayISO();
+  }
+  $('allocateForm').onsubmit=function(e){
+    e.preventDefault(); $('alError').classList.add('hidden'); $('alError').textContent='';
+    var batchId=$('alBatch').value, showId=$('alShow').value, qty=parseInt($('alQty').value,10), eff=$('alDate').value;
+    if(!batchId||!showId||!(qty>0)){ $('alError').textContent='Select batch, show, enter quantity'; $('alError').classList.remove('hidden'); return; }
+    var vouchers=getVouchers(); var vi=vouchers.findIndex(function(v){return v.voucherId===batchId;}); if(vi===-1){ $('alError').textContent='Batch not found'; $('alError').classList.remove('hidden'); return; }
+    var v=vouchers[vi]; var free=freeSequences(v); if(free.length<qty){ $('alError').textContent='Only '+free.length+' free vouchers available'; $('alError').classList.remove('hidden'); return; }
+    var take=free.slice(0,qty), ranges=coalesceToRanges(take); v.allocations=v.allocations||[];
+    ranges.forEach(function(r){ v.allocations.push({ showId:showId, fromSeq:r[0], toSeq:r[1], effectiveDate: eff || todayISO() }); });
+    vouchers[vi]=v; setVouchers(vouchers);
+    e.target.reset(); rebuildAllocateSelectors(); renderVouchers(); renderCodes(); updateAdminStats();
+    logActivity('AllocateVouchers','Allocated '+qty+' from '+formatRange(v)+' to '+showId+' starting '+(eff||todayISO()));
+    toast('Allocated '+qty+' to show with schedule '+(eff||todayISO()));
+  };
+  $('voucherList').addEventListener('click', function(e){
+    var t=e.target;
+    if(t.classList.contains('edit-batch')){
+      var id=t.dataset.id; openBatchEditor(id);
+    } else if(t.classList.contains('delete-batch')){
+      var id=t.dataset.id; deleteBatch(id);
+    }
+  });
+  function openBatchEditor(batchId){
+    var vouchers=getVouchers(); var v=vouchers.find(function(b){return b.voucherId===batchId;}); if(!v) return;
+    $('batchEditId').value=batchId;
+    $('batchIdDisplay').textContent='Editing '+formatRange(v);
+    $('beClient').value=v.clientName;
+    $('bePrize').value=v.prizeDescription;
+    $('beValue').value=(v.prizeValue==null?'':v.prizeValue);
+    $('beExpiry').value=v.expiryDate;
+    show('batchModal');
+  }
+  $('closeBatchModal').onclick=function(){ hide('batchModal'); };
+  $('batchEditForm').onsubmit=function(e){
+    e.preventDefault(); $('beError').classList.add('hidden'); $('beError').textContent='';
+    var id=$('batchEditId').value;
+    var client=$('beClient').value.trim();
+    var prize=$('bePrize').value.trim();
+    var valStr=$('beValue').value; var value=(valStr==='')? null : parseFloat(valStr);
+    var expiry=$('beExpiry').value;
+    if(!client||!prize||!expiry){ $('beError').textContent='Client, Prize and Expiry are required'; $('beError').classList.remove('hidden'); return; }
+    var vouchers=getVouchers(); var i=vouchers.findIndex(function(b){return b.voucherId===id;}); if(i===-1) return;
+    vouchers[i].clientName=client; vouchers[i].prizeDescription=prize; vouchers[i].prizeValue=value; vouchers[i].expiryDate=expiry; setVouchers(vouchers);
+    hide('batchModal'); renderVouchers(); renderCodes(); updateAdminStats(); logActivity('BatchEdited','Edited batch '+id); toast('Batch updated');
+  };
+  function deleteBatch(id){
+    var vouchers=getVouchers(); var i=vouchers.findIndex(function(b){return b.voucherId===id;}); if(i===-1) return;
+    var v=vouchers[i];
+    if((v.used||0)>0 || (v.allocations||[]).length>0){ toast('Cannot delete: batch has usage or allocations'); return; }
+    if(!confirm('Delete this batch '+formatRange(v)+'? This cannot be undone.')) return;
+    vouchers.splice(i,1); setVouchers(vouchers); renderVouchers(); renderCodes(); updateAdminStats(); logActivity('BatchDeleted','Deleted '+id); toast('Batch deleted');
+  }
+
+  // ===== Codes table =====
+  function codeSearchMatch(row, q){
+    if(!q) return true;
+    var s=(row.code+' '+row.client+' '+row.prize+' '+row.value+' '+row.expiry+' '+(row.show||'')+' '+(row.winnerName||'')).toLowerCase();
+    return s.includes(q.toLowerCase());
+  }
+  function findAllocation(v, seq){
+    if(!v.allocations) return null;
+    for(var i=0;i<v.allocations.length;i++){
+      var a=v.allocations[i]; if(seq>=a.fromSeq && seq<=a.toSeq) return a;
+    }
+    return null;
+  }
+  function findShowName(showId){
+    var s=getShows().find(function(x){return x.showId===showId;});
+    return s? s.name : null;
+  }
+  function renderCodes(){
+    var list=$('codeList'); var vouchers=getVouchers(); var q=$('codeSearch').value||''; var onlyAvail=$('codeFilterAvail').checked;
+    list.innerHTML='';
+    if(vouchers.length===0){ list.innerHTML='<tr><td colspan="7" class="muted">No vouchers yet.</td></tr>'; return; }
+    var rows=[];
+    vouchers.forEach(function(v){
+      for(var seq=v.startSeq; seq<=v.endSeq; seq++){
+        var code=voucherCodeFrom(v,seq);
+        var winner=getWinners().find(function(w){ return w.batchId===v.voucherId && w.seq===seq; }) || null;
+        var alloc=findAllocation(v, seq);
+        var showName = alloc? findShowName(alloc.showId): null;
+        var status = winner? 'Assigned' : (alloc? 'Allocated' : 'Free');
+        var row={
+          code:code,
+          client:v.clientName,
+          prize:v.prizeDescription,
+          value:formatBD(v.prizeValue),
+          expiry:v.expiryDate,
+          status:status,
+          show:showName,
+          winnerName: winner? winner.name : ''
+        };
+        if(onlyAvail && status!=='Free' && status!=='Allocated') continue;
+        if(!codeSearchMatch(row,q)) continue;
+        rows.push(row);
+      }
+    });
+    if(rows.length===0){ list.innerHTML='<tr><td colspan="7" class="muted">No matching vouchers.</td></tr>'; return; }
+    var alertDays=getSettings().expiryAlertDays||3;
+    rows.sort(function(a,b){ return a.code<b.code? -1: 1; }).forEach(function(r){
+      var dleft=daysLeft(r.expiry), badge = dleft<0? '<span class="badge badge-danger">Expired</span>' : (dleft===0? '<span class="badge badge-warn">Due today</span>' : (dleft<=alertDays? '<span class="badge badge-warn">'+dleft+'d left</span>':''));
+      var statusBadge = r.status==='Assigned'? '<span class="badge badge-ok">Assigned</span>' : (r.status==='Allocated'? '<span class="badge">Allocated</span>' : '<span class="badge">Free</span>');
+      var who = r.status==='Assigned'? ('Winner: <b>'+r.winnerName+'</b>') : (r.show? ('Show: <b>'+r.show+'</b>') : '—');
+      var tr=document.createElement('tr');
+      if(dleft<=alertDays) tr.className='danger-row';
+      tr.innerHTML='<td><b>'+r.code+'</b></td><td>'+r.client+'</td><td>'+r.prize+'</td><td>'+r.value+'</td><td>'+r.expiry+' '+(badge||'')+'</td><td>'+statusBadge+'</td><td>'+who+'</td>';
+      list.appendChild(tr);
+    });
+  }
+  $('codeSearch').addEventListener('input', renderCodes);
+  $('codeFilterAvail').addEventListener('change', renderCodes);
+  $('codeRefresh').addEventListener('click', renderCodes);
+
+  // ===== RJ auto voucher =====
+  function eligibleCodesForRJ(rjEmail){
+    var vouchers=getVouchers(), shows=getShows();
+    var myShowIds=new Set(
+      shows.filter(function(sh){ return (sh.rjEmails||[]).map(function(e){return e.toLowerCase();}).includes(String(rjEmail).toLowerCase()); })
+           .map(function(sh){return sh.showId;})
+    );
+    var today=todayISO();
+    var opts=[];
+    vouchers.forEach(function(b){
+      var exp=b.expiryDate; if(exp<today) return;
+      var assigned=new Set(b.assignedSeqs||[]);
+      (b.allocations||[]).forEach(function(a){
+        if(!myShowIds.has(a.showId)) return;
+        if(a.effectiveDate && a.effectiveDate>today) return;
+        for(var s=a.fromSeq; s<=a.toSeq; s++){
+          if(!assigned.has(s)) opts.push({batch:b, seq:s, showId:a.showId});
+        }
+      });
+    });
+    opts.sort(function(a,b){ return a.seq-b.seq; });
+    return opts;
+  }
+  function updateRJAutoVoucher(){
+    var s=jget(KEYS.session,null); if(!s || canonicalRole(s.role)!=='RJ') return;
+    $('rjWho').textContent=s.email;
+    var opts=eligibleCodesForRJ(s.email);
+    if(opts.length===0){
+      $('autoVoucherDisplay').textContent='—';
+      $('autoVoucherValue').value='';
+      $('noRJVoucherMsg').classList.remove('hidden');
+    } else {
+      var pick=opts[0];
+      var code=voucherCodeFrom(pick.batch, pick.seq);
+      var showName=findShowName(pick.showId) || pick.showId;
+      $('autoVoucherDisplay').innerHTML='<b>'+code+'</b> — '+pick.batch.clientName+' — '+pick.batch.prizeDescription+' — '+formatBD(pick.batch.prizeValue)+' (exp '+pick.batch.expiryDate+') • Show: '+showName;
+      $('autoVoucherValue').value=pick.batch.voucherId+'|'+pick.seq;
+      $('noRJVoucherMsg').classList.add('hidden');
+    }
+  }
+  $('btnRefreshRJ').onclick=updateRJAutoVoucher;
+
+  // ===== Winner declaration =====
+  function buildCongratsMessage(w){
+    var s=jget(KEYS.session,{}); var settings=getSettings();
+    var rjName = s && s.name ? s.name : 'RJ';
+    var showName = findShowName(w.showId)||'our show';
+    var nextSat = nextSaturdayISO(todayISO());
+    var txt = "Congrats !! You have won voucher number "+w.voucherCode+" on "+showName+" with "+rjName+". please visit our office to collect the voucher on "+(settings.pickupDay||'Saturday')+" ("+isoToNice(nextSat)+") from "+(settings.pickupStart||'10:00').replace(':','')+" AM - "+(settings.pickupEnd||'13:00').replace(':','')+" PM and for more info call "+(settings.contactPhone||'')+". please tell the voucher number to claim the voucher and always rem you need to carry the original cpr of the winner and need to show this message from our whats app to claim the prize";
+    return txt;
+  }
+  function copyToClipboard(text){
+    try{
+      navigator.clipboard.writeText(text).then(function(){ toast('Message copied'); }, function(){ fallbackCopy(text); });
+    }catch(e){ fallbackCopy(text); }
+  }
+  function fallbackCopy(text){
+    var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('Message copied'); }catch(e){ alert(text); } document.body.removeChild(ta);
+  }
+  function renderWinners(){
+    var tb=$('winnersList'); var arr=getWinners().slice().reverse(); tb.innerHTML='';
+    if(arr.length===0){ tb.innerHTML='<tr><td colspan="6" class="muted">No winners yet.</td></tr>'; return; }
+    arr.forEach(function(w){
+      var verifyLabel=w.verified?'Unverify':'Verify';
+      var tr=document.createElement('tr');
+      var actions = '<button class="btn copy-msg" data-id="'+w.winnerId+'">Copy Msg</button>' +
+                    '<a class="btn" target="_blank" rel="noopener" href="https://wa.me/'+(w.phoneE164||'')+'?text='+encodeURIComponent(buildCongratsMessage(w))+'">WhatsApp</a>' +
+                    '<button class="btn verify-btn" data-id="'+w.winnerId+'">'+verifyLabel+'</button>';
+      tr.innerHTML='<td><b>'+w.winnerId+'</b></td><td>'+w.name+'<div class="muted">'+(w.phoneMasked||'')+'</div></td><td><b>'+w.voucherCode+'</b><div class="muted">'+w.client+' — '+w.prize+' — '+w.valueBD+' (exp '+w.expiry+')</div></td><td>'+w.contestType+'</td><td>'+new Date(w.createdAt).toLocaleString()+'</td><td>'+actions+'</td>';
+      tb.appendChild(tr);
+    });
+  }
+  $('winnersList').addEventListener('click', function(e){
+    var t=e.target;
+    if(t.classList.contains('verify-btn')){
+      var id=t.dataset.id; var arr=getWinners(); var i=arr.findIndex(function(w){return w.winnerId===id;}); if(i===-1) return; arr[i].verified=!arr[i].verified; setWinners(arr); renderWinners(); renderCollections(); logActivity('WinnerVerifyToggled','Winner '+id+' verify='+arr[i].verified); toast(arr[i].verified?'Winner verified':'Winner unverified');
+    }
+    if(t.classList.contains('copy-msg')){
+      var id=t.dataset.id; var w=getWinners().find(function(x){return x.winnerId===id;}); if(!w){ toast('Winner not found'); return; }
+      copyToClipboard(buildCongratsMessage(w));
+    }
+  });
+  $('winnerForm').onsubmit=function(e){
+    e.preventDefault(); var err=$('winnerFormError'); err.classList.add('hidden'); err.textContent='';
+    var name=$('winnerName').value.trim();
+    var phone=(function(){
+      var cc=$('phoneCC').value, loc=$('phoneLocal').value;
+      var c=(cc||'').trim(), l=(loc||'').trim();
+      if(c.indexOf('00')===0) c='+'+c.slice(2);
+      if(c.charAt(0)!=='+') c='+'+c.replace(/[^0-9]/g,'');
+      c='+'+c.replace(/[^0-9]/g,'');
+      l=l.replace(/[^0-9]/g,'');
+      var combined=c+l;
+      var valid=(/^\+[1-9]\d{7,14}$/).test(combined);
+      var masked= valid? combined.replace(/(\+\d{3})\d+(\d{2})/, '$1••••$2'): null;
+      return { valid:valid, e164: valid?combined:null, masked:masked };
+    })();
+    var contest=$('contestType').value; var val=$('autoVoucherValue').value;
+    if(!name){ err.textContent='Name required'; err.classList.remove('hidden'); return; }
+    if(!phone.valid){ err.textContent='Enter valid international phone'; err.classList.remove('hidden'); return; }
+    if(!val){ err.textContent='No assigned vouchers for your shows today.'; err.classList.remove('hidden'); return; }
+    var parts=val.split('|'); var batchId=parts[0], seq=parseInt(parts[1],10);
+    var vouchers=getVouchers(); var vi=vouchers.findIndex(function(b){return b.voucherId===batchId;}); if(vi===-1){ err.textContent='Batch not found'; err.classList.remove('hidden'); return; }
+    var v=vouchers[vi]; v.assignedSeqs=v.assignedSeqs||[]; if(v.assignedSeqs.indexOf(seq)!==-1){ err.textContent='Voucher already used'; err.classList.remove('hidden'); return; }
+    var alloc=(function(){
+      if(!v.allocations) return null; for(var i=0;i<v.allocations.length;i++){ var a=v.allocations[i]; if(seq>=a.fromSeq && seq<=a.toSeq) return a; } return null;
+    })();
+    v.assignedSeqs.push(seq); v.used=(v.used||0)+1; vouchers[vi]=v; setVouchers(vouchers);
+    var winnerId=nextWinnerId(); var voucherCode=voucherCodeFrom(v,seq);
+    var session=jget(KEYS.session,{});
+    var w={ winnerId:winnerId, name:name, phoneE164:phone.e164, phoneMasked:phone.masked, contestType:contest, batchId:batchId, seq:seq, voucherCode:voucherCode, client:v.clientName, prize:v.prizeDescription, valueBD: formatBD(v.prizeValue), expiry:v.expiryDate, verified:false, collected:false, createdAt:new Date().toISOString(), showId: alloc?alloc.showId:null, declaredBy: session.email||'', declaredByName: session.name||'' };
+    var winners=getWinners(); winners.push(w); setWinners(winners);
+    e.target.reset(); updateRJAutoVoucher(); renderVouchers(); renderCodes(); renderWinners(); renderCollections(); updateAdminStats(); logActivity('WinnerDeclared','Winner '+winnerId+' for '+voucherCode+' ('+w.client+')'); toast('Winner '+winnerId+' created');
+  };
+
+  // ===== Collections =====
+  function computeDeadline(w){
+    var settings=getSettings();
+    var createdDate=(w.createdAt||'').slice(0,10)||todayISO();
+    var plusN=addDaysISO(createdDate, parseInt(settings.collectionDeadlineDays||14,10));
+    return w.expiry ? minISO(w.expiry, plusN) : plusN;
+  }
+  function daysUntil(iso){ var t=new Date(todayISO()); var d=new Date(iso+'T00:00:00'); return Math.floor((d-t)/(1000*60*60*24)); }
+  function statusPill(w){
+    var items=[]; items.push('<span class="badge '+(w.verified?'badge-ok':'')+'">'+(w.verified?'Verified':'Unverified')+'</span>'); items.push('<span class="badge '+(w.collected?'badge-ok':'badge-warn')+'">'+(w.collected?'Collected':'Pending')+'</span>'); return items.join(' ');
+  }
+  function filterApply(list){
+    var q=($('collectionSearch').value||'').trim().toLowerCase();
+    var ver=$('filterVerified').checked, ov=$('filterOverdue').checked;
+    return list.filter(function(w){
+      var match = !q || [w.name, w.phoneE164, w.voucherCode, w.client, w.prize].some(function(v){ return (v||'').toString().toLowerCase().includes(q); });
+      if(!match) return false; if(ver && !w.verified) return false; if(ov){ var d=daysUntil(computeDeadline(w)); if(d>=0) return false; } return true;
+    });
+  }
+  function renderCollections(){
+    var all=getWinners(); all.forEach(function(w){ if(!w.collection) w.collection={}; if(!w.collection.deadline) w.collection.deadline=computeDeadline(w); }); setWinners(all);
+    var pending = all.filter(function(w){ return !w.collected; });
+    var collected = all.filter(function(w){ return w.collected; });
+    var overdue = pending.filter(function(w){ return daysUntil(computeDeadline(w))<0; });
+    $('statPending').textContent = pending.length; $('statOverdue').textContent = overdue.length; $('statCollectedTotal').textContent = collected.length;
+    $('statVerified').textContent = all.filter(function(w){return w.verified;}).length;
+
+    var list=filterApply(pending).slice().reverse(); var pb=$('pendingCollections'); pb.innerHTML='';
+    if(list.length===0){ pb.innerHTML='<tr><td colspan="6" class="muted">No pending collections match filters.</td></tr>'; }
+    else list.forEach(function(w){
+      var d=daysUntil(computeDeadline(w)); var badge = d<0? '<span class="badge badge-danger">Overdue '+Math.abs(d)+'d</span>' : (d===0? '<span class="badge badge-warn">Due today</span>' : (d<=3? '<span class="badge badge-warn">'+d+'d left</span>': '<span class="badge">'+d+'d left</span>'));
+      var actions = '<button class="btn contact-wa" data-id="'+w.winnerId+'">WhatsApp</button>' +
+                    '<a class="btn" target="_blank" rel="noopener" href="tel:'+ (w.phoneE164||'') +'">Call</a> ' +
+                    '<button class="btn verify-pc" data-id="'+w.winnerId+'">'+(w.verified?'Unverify':'Verify')+'</button> ' +
+                    '<button class="btn btn-primary process-btn" data-id="'+w.winnerId+'">Process</button>';
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td><b>'+w.name+'</b><div class="muted">'+w.winnerId+'</div></td><td>'+(w.phoneMasked||'')+'</td><td><b>'+w.voucherCode+'</b><div class="muted">'+w.client+' — '+w.prize+' — '+w.valueBD+'</div></td><td>'+badge+'</td><td>'+statusPill(w)+'</td><td>'+actions+'</td>';
+      pb.appendChild(tr);
+    });
+    var hb=$('collectionHistory'); hb.innerHTML=''; var hist=collected.slice().reverse();
+    if(hist.length===0){ hb.innerHTML='<tr><td colspan="6" class="muted">No collected winners yet.</td></tr>'; }
+    else hist.forEach(function(w){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td><b>'+w.name+'</b><div class="muted">'+w.winnerId+'</div></td><td><b>'+w.voucherCode+'</b><div class="muted">'+w.client+' — '+w.prize+'</div></td><td>'+ (w.collectedAt? new Date(w.collectedAt).toLocaleString(): '—') +'</td><td>'+(w.collection&&w.collection.idType||'—')+'</td><td>'+(w.collection&&w.collection.notes||'—')+'</td><td>'+(w.collectedBy||'—')+'</td>';
+      hb.appendChild(tr);
+    });
+  }
+  $('pendingCollections').addEventListener('click', function(e){
+    var t=e.target;
+    if(t.classList.contains('verify-pc')){
+      var id=t.dataset.id; var arr=getWinners(); var i=arr.findIndex(function(w){return w.winnerId===id;}); if(i===-1) return;
+      arr[i].verified=!arr[i].verified; setWinners(arr); renderCollections(); logActivity('WinnerVerifyToggled','Winner '+id+' verify='+arr[i].verified); toast(arr[i].verified?'Winner verified':'Winner unverified');
+    } else if(t.classList.contains('process-btn')){
+      openCollectModal(t.dataset.id);
+    } else if(t.classList.contains('contact-wa')){
+      var id=t.dataset.id; var w=getWinners().find(function(x){return x.winnerId===id;}); if(!w) return;
+      var url='https://wa.me/'+(w.phoneE164||'')+'?text='+encodeURIComponent('Hi '+w.name+', we are following up on your prize collection for voucher '+w.voucherCode+'.');
+      window.open(url, '_blank', 'noopener');
+    }
+  });
+  function openCollectModal(id){
+    var w=getWinners().find(function(x){return x.winnerId===id;}); if(!w) return;
+    $('collectWinnerId').value=w.winnerId;
+    $('collectWinnerInfo').textContent=w.winnerId+' — '+w.name+' — '+w.voucherCode+' ('+(w.client||'')+' / '+(w.prize||'')+')';
+    $('collectIdType').value=(w.collection&&w.collection.idType)||'CPR';
+    $('collectVerified').value= String(!!w.verified);
+    $('collectNotes').value=(w.collection&&w.collection.notes)||'';
+    show('collectModal');
+  }
+  $('closeCollectModal').onclick=function(){ hide('collectModal'); };
+  $('btnMarkCollected').onclick=function(){
+    var id=$('collectWinnerId').value; var arr=getWinners(); var i=arr.findIndex(function(w){return w.winnerId===id;}); if(i===-1) return;
+    var w=arr[i];
+    var idType=$('collectIdType').value; var verified=$('collectVerified').value==='true'; var notes=$('collectNotes').value;
+    w.collection=w.collection||{}; w.collection.idType=idType; w.collection.notes=notes;
+    w.verified=verified; w.collected=true; w.collectedAt=new Date().toISOString();
+    var session=jget(KEYS.session,{}); w.collectedBy=session.email||session.name||'Collection Officer';
+    arr[i]=w; setWinners(arr);
+    hide('collectModal'); renderCollections(); renderWinners(); updateAdminStats(); logActivity('Collected','Winner '+w.winnerId+' collected'); toast('Marked as collected');
+  };
+
+  // ===== Admin Stats & Activity =====
+  function calcActiveVouchers(){
+    var today=todayISO(); var count=0;
+    getVouchers().forEach(function(v){
+      for(var s=v.startSeq; s<=v.endSeq; s++){
+        var used=(v.assignedSeqs||[]).indexOf(s)!==-1;
+        var notExpired = v.expiryDate>=today;
+        if(!used && notExpired) count++;
+      }
+    });
+    return count;
+  }
+  function updateAdminStats(){
+    $('adStatShows').textContent = getShows().length;
+    $('adStatActiveVouchers').textContent = calcActiveVouchers();
+    $('adStatWinners').textContent = getWinners().length;
+    $('adStatPending').textContent = getWinners().filter(function(w){ return !w.collected; }).length;
+  }
+  function renderActivity(){
+    var tb=$('activityBody'); var list=getActivity().slice().reverse();
+    var q=($('actSearch').value||'').toLowerCase(); var typ=$('actType').value;
+    if(q){ list=list.filter(function(a){ return (a.message||'').toLowerCase().includes(q) || (a.actor||'').toLowerCase().includes(q) || (a.type||'').toLowerCase().includes(q); }); }
+    if(typ){ list=list.filter(function(a){ return a.type===typ; }); }
+    tb.innerHTML='';
+    if(list.length===0){ tb.innerHTML='<tr><td colspan="4" class="muted">No activity yet.</td></tr>'; return; }
+    list.forEach(function(a){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+new Date(a.ts).toLocaleString()+'</td><td>'+(a.actor||'')+'<div class="muted">'+(a.role||'')+'</div></td><td>'+a.type+'</td><td>'+a.message+'</td>';
+      tb.appendChild(tr);
+    });
+  }
+  $('actRefresh').onclick=renderActivity;
+  $('actType').onchange=renderActivity;
+  $('actSearch').oninput=renderActivity;
+
+  // ===== Settings form =====
+  function loadSettingsForm(){
+    var s=getSettings();
+    $('setVoucherPrefix').value=s.voucherPrefix||'';
+    $('setExpiryAlert').value=s.expiryAlertDays||3;
+    $('setCollectDays').value=s.collectionDeadlineDays||14;
+    $('setPickupDay').value=s.pickupDay||'Saturday';
+    $('setPickupStart').value=s.pickupStart||'10:00';
+    $('setPickupEnd').value=s.pickupEnd||'13:00';
+    $('setPhone').value=s.contactPhone||'';
+    $('setWA').value=s.whatsappCC||'';
+    $('setAddress').value=s.officeAddress||'';
+  }
+  $('settingsForm').onsubmit=function(e){
+    e.preventDefault();
+    var s=getSettings();
+    s.voucherPrefix=$('setVoucherPrefix').value||s.voucherPrefix;
+    s.expiryAlertDays=parseInt($('setExpiryAlert').value||s.expiryAlertDays,10);
+    s.collectionDeadlineDays=parseInt($('setCollectDays').value||s.collectionDeadlineDays,10);
+    s.pickupDay=$('setPickupDay').value||s.pickupDay;
+    s.pickupStart=$('setPickupStart').value||s.pickupStart;
+    s.pickupEnd=$('setPickupEnd').value||s.pickupEnd;
+    s.contactPhone=$('setPhone').value||s.contactPhone;
+    s.whatsappCC=$('setWA').value||s.whatsappCC;
+    s.officeAddress=$('setAddress').value||s.officeAddress;
+    setSettings(s); toast('Settings saved'); updateAdminStats(); renderCodes(); renderVouchers();
+  };
+
+  // ===== Exports =====
+  function toCSV(arr, headers){
+    var esc=function(v){
+      if(v===undefined||v===null) v=''; v=String(v);
+      if(v.includes('"')||v.includes(',')||v.includes('\n')) v='"'+v.replace(/"/g,'""')+'"'; return v;
+    };
+    var out=[];
+    out.push(headers.join(','));
+    arr.forEach(function(r){
+      out.push(headers.map(function(h){ return esc(r[h]); }).join(','));
+    });
+    return out.join('\n');
+  }
+  function downloadCSV(filename, csvText){
+    var blob=new Blob([csvText], {type:'text/csv'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    logActivity('ExportCSV','Exported '+filename);
+  }
+  $('expBatches').onclick=function(){
+    var rows=[];
+    getVouchers().forEach(function(v){
+      rows.push({voucherId:v.voucherId, range:formatRange(v), client:v.clientName, prize:v.prizeDescription, value:v.prizeValue, expiry:v.expiryDate, qty:v.qty, used:v.used||0, allocations:(v.allocations||[]).length, createdAt:v.createdAt});
+    });
+    downloadCSV('batches.csv', toCSV(rows, ['voucherId','range','client','prize','value','expiry','qty','used','allocations','createdAt']));
+  };
+  $('expCodes').onclick=function(){
+    var rows=[];
+    getVouchers().forEach(function(v){
+      for(var s=v.startSeq; s<=v.endSeq; s++){
+        var code=voucherCodeFrom(v,s);
+        var winner=getWinners().find(function(w){ return w.batchId===v.voucherId && w.seq===s; }) || null;
+        var alloc=(function(){ if(!v.allocations) return null; for(var i=0;i<v.allocations.length;i++){ var a=v.allocations[i]; if(s>=a.fromSeq && s<=a.toSeq) return a; } return null; })();
+        rows.push({code:code, client:v.clientName, prize:v.prizeDescription, value:v.prizeValue, expiry:v.expiryDate, status: winner?'Assigned': (alloc?'Allocated':'Free'), showId: alloc?alloc.showId:'', winnerId: winner?winner.winnerId:'', winnerName: winner?winner.name:''});
+      }
+    });
+    downloadCSV('codes.csv', toCSV(rows, ['code','client','prize','value','expiry','status','showId','winnerId','winnerName']));
+  };
+  $('expWinners').onclick=function(){
+    var rows=getWinners().map(function(w){ return {winnerId:w.winnerId, name:w.name, phone:w.phoneE164, contest:w.contestType, voucher:w.voucherCode, client:w.client, prize:w.prize, expiry:w.expiry, verified:w.verified, collected:w.collected, createdAt:w.createdAt, collectedAt:w.collectedAt||''}; });
+    downloadCSV('winners.csv', toCSV(rows, ['winnerId','name','phone','contest','voucher','client','prize','expiry','verified','collected','createdAt','collectedAt']));
+  };
+  $('expShows').onclick=function(){
+    var rows=getShows().map(function(s){ return {showId:s.showId, name:s.name, status:s.status, days:(s.schedule&&s.schedule.days||[]).join('|'), start:(s.schedule&&s.schedule.start)||'', end:(s.schedule&&s.schedule.end)||'', rjs:(s.rjEmails||[]).join('|'), createdAt:s.createdAt}; });
+    downloadCSV('shows.csv', toCSV(rows, ['showId','name','status','days','start','end','rjs','createdAt']));
+  };
+  $('expUsers').onclick=function(){
+    var acts=getActivity();
+    var rows=getUsers().map(function(u){
+      var count=acts.filter(function(a){ return (a.actor||'').toLowerCase()===(u.email||'').toLowerCase(); }).length;
+      return {id:u.id, name:u.name, email:u.email, role:u.role, active:u.active, lastLogin:u.lastLogin||'', createdAt:u.createdAt, activityCount:count};
+    });
+    downloadCSV('users.csv', toCSV(rows, ['id','name','email','role','active','lastLogin','createdAt','activityCount']));
+  };
+  $('expActivity').onclick=function(){
+    var rows=getActivity().map(function(a){ return {ts:a.ts, actor:a.actor, role:a.role, type:a.type, message:a.message}; });
+    downloadCSV('activity.csv', toCSV(rows, ['ts','actor','role','type','message']));
+  };
+
+  function updateStatsWelcome(){ }
+
+  function buildRJOptionsInit(){ buildRJOptions(); }
+
+  function emitDataChange(){
+    updateAdminStats();
+    renderActivity();
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll('[data-open]')).forEach(function(b){ b.addEventListener('click', function(){ showPanel(b.getAttribute('data-open')); }); });
+  // disabled auto session
+  buildDayCheckboxes('#showDays'); buildRJOptionsInit(); renderVouchers(); renderCodes(); renderShows(); renderWinners(); renderCollections(); updateAdminStats(); renderUsers(); renderActivity(); loadSettingsForm();
+  showPanel('panel-admin');
+})();
+</script>
+
+</script>
+
+<!-- GA Login Modal + JS -->
+<div id="loginModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); display:grid; place-items:center; z-index:9999">
+  <form id="gaLoginForm" style="background:#fff;padding:16px;border-radius:12px;width:min(360px,95vw);display:flex;flex-direction:column;gap:8px">
+    <h3 style="margin:0">Sign in</h3>
+    <input name="email" placeholder="Email" type="email" required>
+    <input name="password" placeholder="Password" type="password" required>
+    <button>Sign in</button>
+    <div id="gaLoginErr" style="color:#b91c1c;font-size:12px"></div>
+  </form>
+</div>
+<script>
+async function gaCheckAuth(){
+  try{
+    const r = await fetch('/ga/api/me.php', {credentials:'same-origin'});
+    if(r.ok) {
+      // User is logged in - hide login modal and apply session
+      document.getElementById('loginModal').style.display='none';
+      const userData = await r.json();
+      console.log('User authenticated:', userData.user);
+      
+      // Apply session to the app
+      if(typeof applySession === 'function') {
+        applySession(userData.user);
+      }
+    } else {
+      // User not logged in - show login modal  
+      document.getElementById('loginModal').style.display='grid';
+    }
+  }catch(e){ 
+    console.error('Auth check error:', e); 
+    document.getElementById('loginModal').style.display='grid';
+  }
+}
+async function gaDoLogin(e){
+  e.preventDefault();
+  const f = e.target;
+  const body = { email: f.email.value, password: f.password.value };
+  const errorEl = document.getElementById('gaLoginErr');
+  
+  try {
+    const r = await fetch('/ga/api/login.php', { 
+      method:'POST', 
+      headers:{'Content-Type':'application/json'}, 
+      credentials:'same-origin', 
+      body: JSON.stringify(body) 
+    });
+    
+    if(r.ok){ 
+      // Login successful - get user data and apply session
+      const userData = await r.json();
+      console.log('Login successful:', userData.user);
+      
+      // Hide modal
+      document.getElementById('loginModal').style.display='none';
+      
+      // Apply session to the app
+      if(typeof applySession === 'function') {
+        applySession(userData.user);
+      }
+      
+      // Show appropriate panel based on role
+      if(typeof showPanel === 'function') {
+        const role = (userData.user.role || 'admin').toLowerCase();
+        if(role === 'admin') showPanel('panel-admin');
+        else if(role === 'sales') showPanel('panel-dashboard-sales');
+        else if(role === 'rj') showPanel('panel-winners');
+        else showPanel('panel-collections');
+      }
+      
+    } else { 
+      const result = await r.json().catch(() => ({}));
+      errorEl.textContent = result.error || 'Invalid email or password';
+    }
+  } catch(e) {
+    console.error('Login error:', e);
+    errorEl.textContent = 'Login failed. Please try again.';
+  }
+}
+window.addEventListener('DOMContentLoaded', gaCheckAuth);
+document.addEventListener('DOMContentLoaded', ()=>{
+  const frm = document.getElementById('gaLoginForm');
+  if(frm){ frm.addEventListener('submit', gaDoLogin); }
+});
+</script>
+<!-- /GA Login Modal + JS -->
+
+<script>
+(async function initClock(){
+  const el = document.getElementById('serverClock');
+  if (!el) {
+    console.warn('serverClock element not found');
+    return;
+  }
+  
+  try {
+    const resp = await fetch('/api/server_time.php', {credentials:'same-origin'});
+    if (!resp.ok) throw new Error('Server time API failed');
+    
+    const data = await resp.json();
+    let t = data.epoch_ms;
+
+    function fmtBahrain(ms){
+      const d = new Date(ms);
+      // Asia/Bahrain (UTC+3) display without relying on client tz:
+      return d.toLocaleString('en-GB', { timeZone: 'Asia/Bahrain', hour12: false });
+    }
+    
+    function tick(){ 
+      if (el) el.textContent = fmtBahrain(t); 
+      t += 1000; 
+    }
+    
+    tick();
+    setInterval(tick, 1000);
+    
+    // Optional: resync from server every 5 min
+    setInterval(async ()=> {
+      try { 
+        const r = await fetch('/api/server_time.php'); 
+        if (r.ok) {
+          const j = await r.json(); 
+          t = j.epoch_ms; 
+        }
+      } catch(e) {
+        console.warn('Clock resync failed:', e);
+      }
+    }, 300000);
+    
+  } catch(e) {
+    console.error('Clock initialization failed:', e);
+    if (el) el.textContent = 'Clock Error';
+  }
+})();
+</script>
+
+<script>
+document.querySelectorAll('.tabs a').forEach(a=>{
+  a.addEventListener('click', e=>{
+    e.preventDefault();
+    const view = a.dataset.view;              // "admin"|"sales"|"rj"
+    document.querySelectorAll('.tabs a').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+    document.querySelectorAll('[data-panel]').forEach(p=>{
+      p.style.display = (p.dataset.panel === view) ? 'block' : 'none';
+    });
+  });
+});
+// On load: default to user's role or Admin:
+document.querySelector('.tabs a[data-view="admin"]').click();
+</script>
+
+</body>
+</html>

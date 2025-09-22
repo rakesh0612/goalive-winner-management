@@ -1,0 +1,50 @@
+# Sensitive configuration files
+public_html/ga/api/config.php
+
+# Setup files (should be deleted after use)
+public_html/simple_setup.php
+public_html/test_db.php
+
+# Database files
+*.sql.backup
+*.db
+*.sqlite
+
+# Logs
+*.log
+logs/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node modules (if any)
+node_modules/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.backup
+*.bak
+*~

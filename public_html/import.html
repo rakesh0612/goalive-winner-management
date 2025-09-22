@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import Winners CSV</title>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px;max-width:720px;margin:auto}</style>
+</head><body>
+  <h2>Import Winners CSV</h2>
+  <p>Upload a CSV with header: <code>name,phone_cc,phone_local,contest_type,win_date,show_id,batch_id,seq</code></p>
+  <form action="/ga/api/import_csv.php" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".csv" required>
+    <button type="submit">Upload &amp; Import</button>
+  </form>
+  <p style="margin-top:16px">Note: duplicates within 90 days will be skipped automatically.</p>
+</body></html>

@@ -596,6 +596,8 @@
   }
   window.showPanel=showPanel;
 
+  // Demo role switching disabled - authentication handled by login system
+  /*
   function switchRole(role){
     var demo = {
       Admin:{ email:'admin@goalive.local', name:'Ava Admin', role:'Admin' },
@@ -610,6 +612,7 @@
   $('roleSales').onclick=function(){ switchRole('Sales'); };
   $('roleRJ').onclick=function(){ switchRole('RJ'); };
   $('roleCollect').onclick=function(){ switchRole('Collection'); };
+  */
   $('revealAll').onclick=function(){ Array.prototype.slice.call(document.querySelectorAll('.hidden')).forEach(function(el){ el.classList.remove('hidden'); }); };
   $('resetApp').onclick=function(){ if(confirm('Clear all data & reset?')){ try{ localStorage.clear(); }catch(e){} __mem={}; location.reload(); } };
 
@@ -1363,6 +1366,25 @@ function initializeApp(user) {
       const panelId = roleMap[user.role.toLowerCase()] || 'panel-admin';
       showPanel(panelId);
       console.log('Showing panel:', panelId);
+      
+      // Also activate the correct navigation tab
+      const navMap = {
+        'admin': 'admin',
+        'sales': 'sales',
+        'rj': 'rj',
+        'collection': 'rj'  // Collection users see RJ panel
+      };
+      const navView = navMap[user.role.toLowerCase()] || 'admin';
+      const navTab = document.querySelector(`.tabs a[data-view="${navView}"]`);
+      if (navTab) {
+        document.querySelectorAll('.tabs a').forEach(x => x.classList.remove('active'));
+        navTab.classList.add('active');
+        
+        // Show the correct panel
+        document.querySelectorAll('[data-panel]').forEach(p => {
+          p.style.display = (p.dataset.panel === navView) ? 'block' : 'none';
+        });
+      }
     }
   }, 100);
 }
@@ -1433,8 +1455,7 @@ document.querySelectorAll('.tabs a').forEach(a=>{
     });
   });
 });
-// On load: default to user's role or Admin:
-document.querySelector('.tabs a[data-view="admin"]').click();
+// Navigation will be handled by the authentication system
 </script>
 
 </body>

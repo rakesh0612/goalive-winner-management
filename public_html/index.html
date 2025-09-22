@@ -1298,33 +1298,41 @@
   </form>
 </div>
 <script>
+// Enhanced login system with better error handling
 async function gaCheckAuth(){
   try{
     const r = await fetch('/ga/api/me.php', {credentials:'same-origin'});
+    const loginModal = document.getElementById('loginModal');
+    
     if(r.ok) {
       // User is logged in - hide login modal and apply session
-      document.getElementById('loginModal').style.display='none';
+      if(loginModal) loginModal.style.display='none';
       const userData = await r.json();
       console.log('User authenticated:', userData.user);
       
-      // Apply session to the app
-      if(typeof applySession === 'function') {
-        applySession(userData.user);
-      }
+      // Apply session to the app safely
+      applySessionSafely(userData.user);
     } else {
       // User not logged in - show login modal  
-      document.getElementById('loginModal').style.display='grid';
+      if(loginModal) loginModal.style.display='grid';
+      console.log('User not authenticated - showing login modal');
     }
   }catch(e){ 
     console.error('Auth check error:', e); 
-    document.getElementById('loginModal').style.display='grid';
+    const loginModal = document.getElementById('loginModal');
+    if(loginModal) loginModal.style.display='grid';
   }
 }
+
 async function gaDoLogin(e){
   e.preventDefault();
   const f = e.target;
   const body = { email: f.email.value, password: f.password.value };
   const errorEl = document.getElementById('gaLoginErr');
+  const loginModal = document.getElementById('loginModal');
+  
+  // Clear previous errors
+  if(errorEl) errorEl.textContent = '';
   
   try {
     const r = await fetch('/ga/api/login.php', { 
@@ -1340,35 +1348,86 @@ async function gaDoLogin(e){
       console.log('Login successful:', userData.user);
       
       // Hide modal
-      document.getElementById('loginModal').style.display='none';
+      if(loginModal) loginModal.style.display='none';
       
-      // Apply session to the app
-      if(typeof applySession === 'function') {
-        applySession(userData.user);
-      }
+      // Apply session safely
+      applySessionSafely(userData.user);
       
-      // Show appropriate panel based on role
-      if(typeof showPanel === 'function') {
-        const role = (userData.user.role || 'admin').toLowerCase();
-        if(role === 'admin') showPanel('panel-admin');
-        else if(role === 'sales') showPanel('panel-dashboard-sales');
-        else if(role === 'rj') showPanel('panel-winners');
-        else showPanel('panel-collections');
-      }
+      // Show success message
+      console.log('Login completed successfully');
       
     } else { 
       const result = await r.json().catch(() => ({}));
-      errorEl.textContent = result.error || 'Invalid email or password';
+      const errorMsg = result.error || 'Invalid email or password';
+      if(errorEl) errorEl.textContent = errorMsg;
+      console.error('Login failed:', errorMsg);
     }
   } catch(e) {
     console.error('Login error:', e);
-    errorEl.textContent = 'Login failed. Please try again.';
+    if(errorEl) errorEl.textContent = 'Login failed. Please try again.';
   }
 }
+
+// Safe session application function
+function applySessionSafely(user) {
+  try {
+    // Update user badge safely
+    const userBadge = document.getElementById('userBadge');
+    if(userBadge) {
+      userBadge.textContent = `${user.name} • ${user.role}`;
+    }
+    
+    // Update navigation user name safely  
+    const navUserName = document.getElementById('navUserName');
+    if(navUserName) {
+      navUserName.textContent = user.name;
+    }
+    
+    // Apply session using existing function if available
+    if(typeof applySession === 'function') {
+      applySession(user);
+    }
+    
+    // Show appropriate panel based on role
+    showPanelByRole(user.role);
+    
+    console.log('Session applied successfully for user:', user.name);
+    
+  } catch(e) {
+    console.error('Error applying session:', e);
+    // Don't let session errors break the login - user is still logged in
+  }
+}
+
+// Show panel based on user role
+function showPanelByRole(role) {
+  try {
+    if(typeof showPanel === 'function') {
+      const roleMap = {
+        'admin': 'panel-admin',
+        'sales': 'panel-dashboard-sales', 
+        'rj': 'panel-winners',
+        'collection': 'panel-collections'
+      };
+      const panelId = roleMap[role.toLowerCase()] || 'panel-admin';
+      showPanel(panelId);
+      console.log('Showing panel:', panelId);
+    }
+  } catch(e) {
+    console.error('Error showing panel:', e);
+  }
+}
+
+// Initialize authentication on page load
 window.addEventListener('DOMContentLoaded', gaCheckAuth);
 document.addEventListener('DOMContentLoaded', ()=>{
   const frm = document.getElementById('gaLoginForm');
-  if(frm){ frm.addEventListener('submit', gaDoLogin); }
+  if(frm){ 
+    frm.addEventListener('submit', gaDoLogin);
+    console.log('Login form handler attached');
+  } else {
+    console.error('Login form not found!');
+  }
 });
 </script>
 <!-- /GA Login Modal + JS -->

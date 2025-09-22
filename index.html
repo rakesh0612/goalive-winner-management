@@ -54,7 +54,8 @@
   @media (min-width:1024px){ .layout{ grid-template-columns:280px 1fr; } }
   .card{ background:var(--paper); border:1px solid var(--border); border-radius:16px; padding:16px; }
   .panel{ background:var(--paper); border:1px solid var(--border); border-radius:16px; }
-  .panel > .head{ padding:14px 16px; border-bottom:1px solid var(--border); font-weight:800; }
+  .panel > .head{ padding:14px 16px; border-bottom:1px solid var(--border); font-weight:800; display:flex; justify-content:space-between; align-items:center; }
+  .panel > .head .time{ font-size:12px; color:var(--muted); font-weight:400; }
   .panel > .body{ padding:16px; }
   .navbtn{ width:100%; text-align:left; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; margin:6px 0; cursor:pointer; font-weight:700; }
   .navbtn[aria-current="true"]{ background:linear-gradient(135deg,var(--brand),var(--flare) 45%,var(--aqua)); color:#fff; border:none; }
@@ -91,10 +92,46 @@
     display:flex; align-items:center; gap:16px;
     padding:10px 16px; background:#0f172a; color:#fff;
     border-bottom:1px solid rgba(255,255,255,.12);
+    flex-wrap: wrap;
   }
-  .topbar .tabs a{ color:#cbd5e1; text-decoration:none; margin-right:12px }
-  .topbar .tabs a.active{ color:#fff; font-weight:600; }
-  body{ scroll-padding-top:64px; } /* avoids hidden content under sticky bar */
+  .topbar .brand { font-weight: 700; }
+  .topbar .tabs{ display:flex; gap:8px; flex-wrap:wrap; }
+  .topbar .tabs a{ color:#cbd5e1; text-decoration:none; padding:8px 12px; border-radius:6px; transition:all 0.2s; }
+  .topbar .tabs a:hover{ background:rgba(255,255,255,0.1); color:#fff; }
+  .topbar .tabs a.active{ color:#fff; font-weight:600; background:rgba(255,255,255,0.1); }
+  .topbar .clock{ margin-left:auto; font-size:12px; }
+  .topbar .user-block{ margin-left:8px; }
+  
+  @media (max-width: 768px) {
+    .topbar { flex-direction:column; align-items:stretch; gap:8px; padding:12px; }
+    .topbar .brand { text-align:center; }
+    .topbar .tabs { justify-content:center; }
+    .topbar .tabs a { font-size:12px; padding:6px 10px; }
+    .topbar .clock, .topbar .user-block { align-self:center; margin:0; }
+  }
+  
+  body{ scroll-padding-top:64px; }
+  
+  /* Mobile responsive improvements */
+  @media (max-width: 768px) {
+    .container { padding:0 8px; }
+    .layout { grid-template-columns:1fr; gap:8px; padding:8px 0 16px; }
+    .card { padding:12px; }
+    .panel > .head { padding:12px; flex-direction:column; align-items:flex-start; gap:4px; }
+    .panel > .head .time { font-size:11px; }
+    .rowgrid { gap:8px; }
+    .rowgrid-2, .rowgrid-3, .rowgrid-4 { grid-template-columns:1fr; }
+    .table-scroll { font-size:12px; }
+    th, td { padding:6px; }
+    .btn { padding:6px 10px; font-size:12px; }
+    .form-actions { flex-direction:column; align-items:stretch; }
+    .diag { display:none; } /* Hide debug bar on mobile */
+  }
+  
+  /* Tablet improvements */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .rowgrid-3, .rowgrid-4 { grid-template-columns:1fr 1fr; }
+  }
 </style>
 </head>
 <body class="checking-auth">
@@ -127,9 +164,12 @@
       <a href="#" data-view="admin">Admin</a>
       <a href="#" data-view="sales">Sales</a>
       <a href="#" data-view="rj">RJ</a>
+      <a href="#" data-view="digital">Digital Media</a>
       <a href="#" data-view="collections">Collections</a>
       <a href="#" data-view="shows">Shows</a>
       <a href="#" data-view="users">Users</a>
+      <a href="#" data-view="activity">Activity Log</a>
+      <a href="#" data-view="exports">Exports</a>
       <a href="#" data-view="settings">Settings</a>
     </nav>
     <div class="clock" id="serverClock">—</div>
@@ -152,45 +192,31 @@
       <main>
         <!-- ADMIN DASHBOARD -->
         <section id="panel-admin" class="panel" data-panel="admin">
-          <div class="head">Admin Dashboard & Analytics</div>
+          <div class="head">
+            <span>Admin Dashboard & Analytics</span>
+            <span class="time" id="adminTime">—</span>
+          </div>
           <div class="body">
             <div class="rowgrid rowgrid-4">
-              <div class="card stat"><div><div class="muted">Total Shows</div><div class="num" id="adStatShows">—</div></div><span class="pill">📺 Shows</span></div>
-              <div class="card stat"><div><div class="muted">Active Vouchers</div><div class="num" id="adStatActiveVouchers">—</div></div><span class="pill">🎟️ Vouchers</span></div>
-              <div class="card stat"><div><div class="muted">Winners Declared</div><div class="num" id="adStatWinners">—</div></div><span class="pill">🏆 Winners</span></div>
-              <div class="card stat"><div><div class="muted">Pending Collections</div><div class="num" id="adStatPending">—</div></div><span class="pill">📦 Collections</span></div>
+              <div class="card stat"><div><div class="muted">Total Shows</div><div class="num" id="adStatShows">—</div></div></div>
+              <div class="card stat"><div><div class="muted">Active Vouchers</div><div class="num" id="adStatActiveVouchers">—</div></div></div>
+              <div class="card stat"><div><div class="muted">Winners Declared</div><div class="num" id="adStatWinners">—</div></div></div>
+              <div class="card stat"><div><div class="muted">Pending Collections</div><div class="num" id="adStatPending">—</div></div></div>
             </div>
 
-            <div class="rowgrid rowgrid-2" style="margin-top:12px">
-              <div class="card">
-                <div class="section-title">Activity Log</div>
-                <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0">
-                  <div style="flex:1 1 240px"><input id="actSearch" placeholder="Search action / user / message"></div>
-                  <select id="actType" style="flex:0 0 200px">
-                    <option value="">All types</option>
-                    <option>Login</option><option>CreateVouchers</option><option>AllocateVouchers</option><option>WinnerDeclared</option><option>WinnerVerifyToggled</option><option>Collected</option><option>ShowCreated</option><option>ShowEdited</option><option>ShowDeleted</option><option>BatchEdited</option><option>BatchDeleted</option><option>SettingsSaved</option><option>ExportCSV</option>
-                  </select>
-                  <button id="actRefresh" class="btn">Refresh</button>
-                </div>
-                <div class="table-scroll">
-                  <table>
-                    <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr></thead>
-                    <tbody id="activityBody"></tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div class="card">
-                <div class="section-title">Exports (CSV)</div>
-                <div class="rowgrid">
-                  <button class="btn" id="expBatches">Export Voucher Batches</button>
-                  <button class="btn" id="expCodes">Export Voucher Codes</button>
-                  <button class="btn" id="expWinners">Export Winners</button>
-                  <button class="btn" id="expShows">Export Shows</button>
-                  <button class="btn" id="expUsers">Export Users</button>
-                  <button class="btn" id="expActivity">Export Activity Log</button>
-                </div>
-                <div class="muted" style="margin-top:8px">Downloads are generated in-browser as CSV files.</div>
+            <div class="card" style="margin-top:12px">
+              <div class="section-title">Quick Overview</div>
+              <div class="muted">
+                Welcome to the GO ALIVE MEDIA Winner Management System. Use the navigation tabs above to access different sections:
+                <br><br>
+                • <strong>Sales:</strong> Create and allocate vouchers<br>
+                • <strong>RJ:</strong> Declare winners for radio shows<br>
+                • <strong>Digital Media:</strong> Manage social media campaigns<br>
+                • <strong>Collections:</strong> Track prize collections<br>
+                • <strong>Shows:</strong> Manage radio shows and schedules<br>
+                • <strong>Users:</strong> Manage user accounts<br>
+                • <strong>Activity Log:</strong> View system activity<br>
+                • <strong>Exports:</strong> Download data reports
               </div>
             </div>
           </div>
@@ -198,7 +224,10 @@
 
         <!-- SALES -->
         <section id="panel-dashboard-sales" class="panel hidden" data-panel="sales">
-          <div class="head">Sales Dashboard</div>
+          <div class="head">
+            <span>Sales Dashboard</span>
+            <span class="time" id="salesTime">—</span>
+          </div>
           <div class="body rowgrid rowgrid-2">
             <form id="createVoucherForm" class="card" autocomplete="off">
               <h3 class="section-title">Create Vouchers</h3>
@@ -263,7 +292,10 @@
 
         <!-- RJ -->
         <section id="panel-winners" class="panel hidden" data-panel="rj">
-          <div class="head">Winner Declaration</div>
+          <div class="head">
+            <span>Winner Declaration</span>
+            <span class="time" id="rjTime">—</span>
+          </div>
           <div class="body">
             <div class="card" style="margin-bottom:10px">
               <div><span class="badge">RJ</span> <b id="rjWho">—</b></div>
@@ -302,9 +334,105 @@
           </div>
         </section>
 
+        <!-- DIGITAL MEDIA -->
+        <section id="panel-digital" class="panel hidden" data-panel="digital">
+          <div class="head">
+            <span>Digital Media & Social Campaigns</span>
+            <span class="time" id="digitalTime">—</span>
+          </div>
+          <div class="body">
+            <div class="card" style="margin-bottom:10px">
+              <div><span class="badge">Digital Team</span> <b id="digitalWho">—</b></div>
+              <div class="muted" style="font-size:12px">Manage social media campaigns, contests, and digital gift allocations.</div>
+            </div>
+
+            <div class="rowgrid rowgrid-2">
+              <form id="digitalCampaignForm" class="card" autocomplete="off">
+                <h3 class="section-title">Create Digital Campaign</h3>
+                <div class="rowgrid rowgrid-2">
+                  <div><label>Campaign Name</label><input id="dcName" type="text" required></div>
+                  <div><label>Platform</label>
+                    <select id="dcPlatform">
+                      <option>Instagram</option>
+                      <option>Facebook</option>
+                      <option>Twitter</option>
+                      <option>TikTok</option>
+                      <option>YouTube</option>
+                      <option>Website</option>
+                      <option>Multiple Platforms</option>
+                    </select>
+                  </div>
+                  <div><label>Campaign Type</label>
+                    <select id="dcType">
+                      <option>Contest</option>
+                      <option>Giveaway</option>
+                      <option>Quiz</option>
+                      <option>Photo/Video Contest</option>
+                      <option>Hashtag Campaign</option>
+                      <option>Survey</option>
+                    </select>
+                  </div>
+                  <div><label>Gift/Prize</label><input id="dcGift" type="text" required></div>
+                  <div><label>Gift Value (BD)</label><input id="dcValue" type="number" step="0.001" placeholder="10.000"></div>
+                  <div><label>End Date</label><input id="dcEndDate" type="date" required></div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-primary" type="submit">Create Campaign</button>
+                  <span id="dcError" class="hidden" style="color:#b91c1c"></span>
+                </div>
+              </form>
+
+              <form id="digitalWinnerForm" class="card">
+                <h3 class="section-title">Declare Digital Winner</h3>
+                <div class="rowgrid rowgrid-2">
+                  <div><label>Winner Name/Handle</label><input id="dwName" type="text" required></div>
+                  <div><label>Platform Username</label><input id="dwUsername" type="text" placeholder="@username"></div>
+                  <div class="rowgrid rowgrid-2">
+                    <div><label>Country Code</label><input id="dwPhoneCC" type="text" value="+973"></div>
+                    <div><label>Phone Number</label><input id="dwPhoneLocal" type="tel" placeholder="12345678"></div>
+                  </div>
+                  <div><label>Email (Optional)</label><input id="dwEmail" type="email" placeholder="winner@email.com"></div>
+                  <div><label>Campaign</label><select id="dwCampaign"></select></div>
+                  <div><label>Winning Entry</label><textarea id="dwEntry" placeholder="Description of winning entry/post"></textarea></div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-primary" type="submit">Declare Winner</button>
+                  <span id="dwError" class="hidden" style="color:#b91c1c"></span>
+                </div>
+              </form>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <div class="row" style="gap:8px; flex-wrap:wrap; align-items:center">
+                <div class="muted" style="font-weight:800">Active Campaigns</div>
+                <button id="refreshCampaigns" class="btn">Refresh</button>
+              </div>
+              <div class="table-scroll" style="margin-top:8px">
+                <table>
+                  <thead><tr><th>Campaign</th><th>Platform</th><th>Type</th><th>Gift</th><th>Value</th><th>End Date</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody id="campaignsList"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <div class="muted" style="font-weight:800">Digital Winners</div>
+              <div class="table-scroll" style="margin-top:8px">
+                <table>
+                  <thead><tr><th>Winner</th><th>Platform</th><th>Campaign</th><th>Gift</th><th>Contact</th><th>Date</th><th>Actions</th></tr></thead>
+                  <tbody id="digitalWinnersList"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- COLLECTIONS -->
         <section id="panel-collections" class="panel hidden" data-panel="collections">
-          <div class="head">Prize Collection</div>
+          <div class="head">
+            <span>Prize Collection</span>
+            <span class="time" id="collectionsTime">—</span>
+          </div>
           <div class="body">
             <div class="rowgrid rowgrid-4">
               <div class="card"><div class="muted">Pending</div><div id="statPending" style="font-weight:900;font-size:20px">0</div></div>
@@ -339,7 +467,10 @@
 
         <!-- SHOWS -->
         <section id="panel-shows" class="panel hidden" data-panel="shows">
-          <div class="head">📺 Show Management</div>
+          <div class="head">
+            <span>Show Management</span>
+            <span class="time" id="showsTime">—</span>
+          </div>
           <div class="body">
             <form id="showForm" class="card">
               <div class="rowgrid rowgrid-2">
@@ -373,7 +504,10 @@
 
         <!-- USERS -->
         <section id="panel-users" class="panel hidden" data-panel="users">
-          <div class="head">👤 User Management</div>
+          <div class="head">
+            <span>User Management</span>
+            <span class="time" id="usersTime">—</span>
+          </div>
           <div class="body">
             <form id="userForm" class="card">
               <div class="rowgrid rowgrid-3">
@@ -381,7 +515,7 @@
                 <div><label>Email</label><input id="uEmail" type="email" required></div>
                 <div><label>Role</label>
                   <select id="uRole">
-                    <option>Admin</option><option>Sales</option><option>RJ</option><option>Collection</option>
+                    <option>Admin</option><option>Sales</option><option>RJ</option><option>Digital</option><option>Collection</option>
                   </select>
                 </div>
               </div>
@@ -399,9 +533,69 @@
           </div>
         </section>
 
+        <!-- ACTIVITY LOG -->
+        <section id="panel-activity" class="panel hidden" data-panel="activity">
+          <div class="head">
+            <span>Activity Log</span>
+            <span class="time" id="activityTime">—</span>
+          </div>
+          <div class="body">
+            <div class="card">
+              <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0">
+                <div style="flex:1 1 240px"><input id="actSearch" placeholder="Search action / user / message"></div>
+                <select id="actType" style="flex:0 0 200px">
+                  <option value="">All types</option>
+                  <option>Login</option><option>CreateVouchers</option><option>AllocateVouchers</option><option>WinnerDeclared</option><option>WinnerVerifyToggled</option><option>Collected</option><option>ShowCreated</option><option>ShowEdited</option><option>ShowDeleted</option><option>BatchEdited</option><option>BatchDeleted</option><option>SettingsSaved</option><option>ExportCSV</option><option>DigitalCampaign</option><option>DigitalWinner</option>
+                </select>
+                <button id="actRefresh" class="btn">Refresh</button>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr></thead>
+                  <tbody id="activityBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EXPORTS -->
+        <section id="panel-exports" class="panel hidden" data-panel="exports">
+          <div class="head">
+            <span>Data Exports</span>
+            <span class="time" id="exportsTime">—</span>
+          </div>
+          <div class="body">
+            <div class="card">
+              <div class="section-title">Export Data (CSV)</div>
+              <div class="rowgrid rowgrid-3">
+                <button class="btn" id="expBatches">Export Voucher Batches</button>
+                <button class="btn" id="expCodes">Export Voucher Codes</button>
+                <button class="btn" id="expWinners">Export Winners</button>
+                <button class="btn" id="expShows">Export Shows</button>
+                <button class="btn" id="expUsers">Export Users</button>
+                <button class="btn" id="expActivity">Export Activity Log</button>
+                <button class="btn" id="expCampaigns">Export Digital Campaigns</button>
+                <button class="btn" id="expDigitalWinners">Export Digital Winners</button>
+                <button class="btn" id="expCollections">Export Collections</button>
+              </div>
+              <div class="muted" style="margin-top:16px">
+                <strong>Export Information:</strong><br>
+                • All downloads are generated in-browser as CSV files<br>
+                • Files include all available data with proper formatting<br>
+                • Export times are logged in the Activity Log<br>
+                • Large datasets may take a few moments to process
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- SETTINGS -->
         <section id="panel-settings" class="panel hidden" data-panel="settings">
-          <div class="head">⚙️ System Settings</div>
+          <div class="head">
+            <span>System Settings</span>
+            <span class="time" id="settingsTime">—</span>
+          </div>
           <div class="body">
             <form id="settingsForm" class="card">
               <div class="rowgrid rowgrid-3">
@@ -572,6 +766,7 @@
         {id:nextUserId(), name:'Ava Admin', email:'admin@goalive.local', role:'Admin', active:true, lastLogin:null, createdAt:new Date().toISOString()},
         {id:nextUserId(), name:'Sam Sales', email:'sales@goalive.local', role:'Sales', active:true, lastLogin:null, createdAt:new Date().toISOString()},
         {id:nextUserId(), name:'Ria RJ', email:'rj@goalive.local', role:'RJ', active:true, lastLogin:null, createdAt:new Date().toISOString()},
+        {id:nextUserId(), name:'Dana Digital', email:'digital@goalive.local', role:'Digital', active:true, lastLogin:null, createdAt:new Date().toISOString()},
         {id:nextUserId(), name:'Colin Collection', email:'collect@goalive.local', role:'Collection', active:true, lastLogin:null, createdAt:new Date().toISOString()}
       ];
       jset(KEYS.users,u);
@@ -601,13 +796,15 @@
     if(i!==-1){ users[i].lastLogin=new Date().toISOString(); setUsers(users); }
     logActivity('Login','User signed in');
     if(session.role==='RJ'){ $('rjWho').textContent=session.email; }
+    if(session.role==='Digital'){ var digitalWho = $('digitalWho'); if(digitalWho) digitalWho.textContent=session.email; }
   }
   function buildNav(role){
     var list=$('navList'); list.innerHTML='';
     var NAV={
-      Admin:[['Admin Dashboard','panel-admin'],['Show Management','panel-shows'],['User Management','panel-users'],['System Settings','panel-settings'],['Sales — Create & Allocate','panel-dashboard-sales'],['Winner Declaration','panel-winners'],['Prize Collection','panel-collections']],
+      Admin:[['Admin Dashboard','panel-admin'],['Show Management','panel-shows'],['User Management','panel-users'],['Activity Log','panel-activity'],['Data Exports','panel-exports'],['System Settings','panel-settings'],['Sales — Create & Allocate','panel-dashboard-sales'],['Winner Declaration','panel-winners'],['Digital Media','panel-digital'],['Prize Collection','panel-collections']],
       Sales:[['Sales — Create & Allocate','panel-dashboard-sales']],
       RJ:[['Winner Declaration','panel-winners']],
+      Digital:[['Digital Media','panel-digital']],
       Collection:[['Prize Collection','panel-collections']]
     };
     (NAV[role]||[]).forEach(function(it,idx){
@@ -618,15 +815,17 @@
   }
 
   function showPanel(id){
-    var ids=['panel-admin','panel-dashboard-sales','panel-winners','panel-collections','panel-shows','panel-users','panel-settings'];
+    var ids=['panel-admin','panel-dashboard-sales','panel-winners','panel-digital','panel-collections','panel-shows','panel-users','panel-activity','panel-exports','panel-settings'];
     ids.forEach(function(pid){ hide(pid); });
     show(id);
     if(id==='panel-dashboard-sales'){ renderVouchers(); renderCodes(); rebuildAllocateSelectors(); }
     if(id==='panel-winners'){ updateRJAutoVoucher(); renderWinners(); }
+    if(id==='panel-digital'){ renderDigitalCampaigns(); renderDigitalWinners(); rebuildCampaignSelectors(); }
     if(id==='panel-shows'){ renderShows(); buildDayCheckboxes('#showDays'); buildRJOptions(); }
     if(id==='panel-collections'){ renderCollections(); }
-    if(id==='panel-admin'){ updateAdminStats(); renderActivity(); }
+    if(id==='panel-admin'){ updateAdminStats(); }
     if(id==='panel-users'){ renderUsers(); }
+    if(id==='panel-activity'){ renderActivity(); }
     if(id==='panel-settings'){ loadSettingsForm(); }
   }
   window.showPanel=showPanel;
@@ -1301,6 +1500,84 @@
     downloadCSV('activity.csv', toCSV(rows, ['ts','actor','role','type','message']));
   };
 
+  // ===== Digital Media / Campaigns =====
+  var CAMPAIGNS_KEY='ga_campaigns', DIGITAL_WINNERS_KEY='ga_digital_winners', CAMPAIGNS_SEQ_KEY='ga_campaigns_seq', DIGITAL_WINNERS_SEQ_KEY='ga_digital_winners_seq';
+  
+  function nextCampaignId(){ return 'CAM-2024-'+pad3(bump(CAMPAIGNS_SEQ_KEY)); }
+  function nextDigitalWinnerId(){ return 'DW-2024-'+pad3(bump(DIGITAL_WINNERS_SEQ_KEY)); }
+  function getCampaigns(){ return jget(CAMPAIGNS_KEY, []); }
+  function setCampaigns(a){ jset(CAMPAIGNS_KEY, a); emitDataChange(); }
+  function getDigitalWinners(){ return jget(DIGITAL_WINNERS_KEY, []); }
+  function setDigitalWinners(a){ jset(DIGITAL_WINNERS_KEY, a); emitDataChange(); }
+
+  function renderDigitalCampaigns(){
+    var tb=$('campaignsList'); var campaigns=getCampaigns().slice().reverse(); tb.innerHTML='';
+    if(campaigns.length===0){ tb.innerHTML='<tr><td colspan="8" class="muted">No campaigns yet.</td></tr>'; return; }
+    campaigns.forEach(function(c){
+      var status = new Date(c.endDate) < new Date() ? '<span class="badge badge-warn">Ended</span>' : '<span class="badge badge-ok">Active</span>';
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td><b>'+c.name+'</b><div class="muted">'+c.campaignId+'</div></td><td>'+c.platform+'</td><td>'+c.type+'</td><td>'+c.gift+'</td><td>'+formatBD(c.value)+'</td><td>'+c.endDate+'</td><td>'+status+'</td><td><button class="btn edit-campaign" data-id="'+c.campaignId+'">Edit</button> <button class="btn btn-danger del-campaign" data-id="'+c.campaignId+'">Delete</button></td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderDigitalWinners(){
+    var tb=$('digitalWinnersList'); var winners=getDigitalWinners().slice().reverse(); tb.innerHTML='';
+    if(winners.length===0){ tb.innerHTML='<tr><td colspan="7" class="muted">No digital winners yet.</td></tr>'; return; }
+    winners.forEach(function(w){
+      var campaign = getCampaigns().find(function(c){ return c.campaignId === w.campaignId; }) || {};
+      var contact = (w.email ? w.email + '<br>' : '') + (w.phoneMasked || '');
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td><b>'+w.name+'</b><div class="muted">'+w.username+'</div></td><td>'+campaign.platform+'</td><td>'+campaign.name+'</td><td>'+campaign.gift+'</td><td>'+contact+'</td><td>'+new Date(w.createdAt).toLocaleString()+'</td><td><button class="btn copy-digital-msg" data-id="'+w.winnerId+'">Copy Msg</button></td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  function rebuildCampaignSelectors(){
+    var sel=$('dwCampaign'); if(!sel) return; sel.innerHTML='';
+    getCampaigns().filter(function(c){ return new Date(c.endDate) >= new Date(); }).forEach(function(c){
+      var opt=document.createElement('option'); opt.value=c.campaignId; opt.textContent=c.name+' ('+c.platform+')'; sel.appendChild(opt);
+    });
+  }
+
+  $('digitalCampaignForm').onsubmit=function(e){
+    e.preventDefault(); var err=$('dcError'); err.classList.add('hidden'); err.textContent='';
+    var name=$('dcName').value.trim(), platform=$('dcPlatform').value, type=$('dcType').value, gift=$('dcGift').value.trim();
+    var valStr=$('dcValue').value; var value=(valStr==='')? null : parseFloat(valStr); var endDate=$('dcEndDate').value;
+    if(!name||!gift||!endDate){ err.textContent='Name, Gift and End Date required'; err.classList.remove('hidden'); return; }
+    var c={ campaignId: nextCampaignId(), name:name, platform:platform, type:type, gift:gift, value:value, endDate:endDate, createdAt:new Date().toISOString() };
+    var campaigns=getCampaigns(); campaigns.push(c); setCampaigns(campaigns);
+    logActivity('DigitalCampaign','Created campaign '+c.campaignId+' '+name);
+    e.target.reset(); renderDigitalCampaigns(); rebuildCampaignSelectors(); toast('Campaign '+c.campaignId+' created');
+  };
+
+  $('digitalWinnerForm').onsubmit=function(e){
+    e.preventDefault(); var err=$('dwError'); err.classList.add('hidden'); err.textContent='';
+    var name=$('dwName').value.trim(), username=$('dwUsername').value.trim(), email=$('dwEmail').value.trim();
+    var phone=(function(){
+      var cc=$('dwPhoneCC').value, loc=$('dwPhoneLocal').value;
+      var c=(cc||'').trim(), l=(loc||'').trim();
+      if(c.indexOf('00')===0) c='+'+c.slice(2);
+      if(c.charAt(0)!=='+') c='+'+c.replace(/[^0-9]/g,'');
+      c='+'+c.replace(/[^0-9]/g,'');
+      l=l.replace(/[^0-9]/g,'');
+      var combined=c+l;
+      var valid=(/^\+[1-9]\d{7,14}$/).test(combined);
+      var masked= valid? combined.replace(/(\+\d{3})\d+(\d{2})/, '$1••••$2'): null;
+      return { valid:valid, e164: valid?combined:null, masked:masked };
+    })();
+    var campaignId=$('dwCampaign').value, entry=$('dwEntry').value.trim();
+    if(!name||!campaignId){ err.textContent='Name and Campaign required'; err.classList.remove('hidden'); return; }
+    if(!phone.valid){ err.textContent='Enter valid phone number'; err.classList.remove('hidden'); return; }
+    var session=jget(KEYS.session,{});
+    var w={ winnerId:nextDigitalWinnerId(), name:name, username:username, email:email, phoneE164:phone.e164, phoneMasked:phone.masked, campaignId:campaignId, entry:entry, createdAt:new Date().toISOString(), declaredBy: session.email||'', declaredByName: session.name||'' };
+    var winners=getDigitalWinners(); winners.push(w); setDigitalWinners(winners);
+    logActivity('DigitalWinner','Digital winner '+w.winnerId+' for campaign '+campaignId);
+    e.target.reset(); renderDigitalWinners(); toast('Digital winner '+w.winnerId+' created');
+  };
+
+  $('refreshCampaigns').onclick=function(){ renderDigitalCampaigns(); renderDigitalWinners(); rebuildCampaignSelectors(); };
+
   function updateStatsWelcome(){ }
 
   function buildRJOptionsInit(){ buildRJOptions(); }
@@ -1312,7 +1589,7 @@
 
   Array.prototype.slice.call(document.querySelectorAll('[data-open]')).forEach(function(b){ b.addEventListener('click', function(){ showPanel(b.getAttribute('data-open')); }); });
   // disabled auto session
-  buildDayCheckboxes('#showDays'); buildRJOptionsInit(); renderVouchers(); renderCodes(); renderShows(); renderWinners(); renderCollections(); updateAdminStats(); renderUsers(); renderActivity(); loadSettingsForm();
+  buildDayCheckboxes('#showDays'); buildRJOptionsInit(); renderVouchers(); renderCodes(); renderShows(); renderWinners(); renderCollections(); updateAdminStats(); renderUsers(); renderActivity(); loadSettingsForm(); renderDigitalCampaigns(); renderDigitalWinners(); rebuildCampaignSelectors();
   showPanel('panel-admin');
 })();
 </script>
@@ -1396,22 +1673,16 @@ function displayUserInfo(user) {
 
 // Logout function
 async function logout() {
-  if (confirm('Are you sure you want to sign out?')) {
-    try {
-      await fetch('/ga/api/logout.php', {
-        method: 'POST',
-        credentials: 'same-origin'
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // For localhost testing, just reload the page
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        window.location.reload();
-      } else {
-        window.location.href = '/login.html';
-      }
-    }
+  try {
+    await fetch('/ga/api/logout.php', {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    // Always redirect to login page
+    window.location.href = '/login.html';
   }
 }
 
@@ -1433,6 +1704,7 @@ function initializeApp(user) {
       'admin': 'admin',
       'sales': 'sales', 
       'rj': 'rj',
+      'digital': 'digital',
       'collection': 'collections'
     };
     const defaultView = roleMap[user.role.toLowerCase()] || 'admin';
@@ -1491,9 +1763,12 @@ function switchToView(view) {
       'admin': 'panel-admin',
       'sales': 'panel-dashboard-sales', 
       'rj': 'panel-winners',
+      'digital': 'panel-digital',
       'collections': 'panel-collections',
       'shows': 'panel-shows',
       'users': 'panel-users',
+      'activity': 'panel-activity',
+      'exports': 'panel-exports',
       'settings': 'panel-settings'
     };
     const panelId = panelMap[view];
@@ -1509,18 +1784,40 @@ document.addEventListener('DOMContentLoaded', checkAuthentication);
 <!-- /GA Login Modal + JS -->
 
 <script>
-// Simple fallback clock for localhost testing
-(function initSimpleClock(){
-  const el = document.getElementById('serverClock');
-  if (!el) return;
+// Simple clock for all panels
+(function initClock(){
+  const timeElements = [
+    'serverClock', 'adminTime', 'salesTime', 'rjTime', 'digitalTime', 
+    'collectionsTime', 'showsTime', 'usersTime', 'activityTime', 'exportsTime', 'settingsTime'
+  ];
   
-  function updateClock() {
+  function updateAllTimes() {
     const now = new Date();
-    el.textContent = now.toLocaleString();
+    const timeString = now.toLocaleString('en-GB', { 
+      timeZone: 'Asia/Bahrain', 
+      hour12: false,
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
+    timeElements.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (id === 'serverClock') {
+          el.textContent = timeString;
+        } else {
+          el.textContent = timeString.split(' ')[1]; // Just time for panel headers
+        }
+      }
+    });
   }
   
-  updateClock();
-  setInterval(updateClock, 1000);
+  updateAllTimes();
+  setInterval(updateAllTimes, 1000);
 })();
 
 // Ensure navigation is working - this runs after everything is loaded

@@ -102,12 +102,6 @@
       <span class="badge" id="userBadge">—</span>
     </div>
   </header>
-      <div id="loginError" class="hidden" style="color:#b91c1c;font-size:12px"></div>
-      <button class="btn btn-primary" type="submit">Sign in</button>
-    </div>
-    <div class="muted" style="margin-top:10px;font-size:12px">Tip: Admin demo — admin@goalive.local / admin123</div>
-  </form>
-</div>
 
 
   <div class="container">
@@ -1287,148 +1281,94 @@
 
 </script>
 
-<!-- GA Login Modal + JS -->
-<div id="loginModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); display:grid; place-items:center; z-index:9999">
-  <form id="gaLoginForm" style="background:#fff;padding:16px;border-radius:12px;width:min(360px,95vw);display:flex;flex-direction:column;gap:8px">
-    <h3 style="margin:0">Sign in</h3>
-    <input name="email" placeholder="Email" type="email" required>
-    <input name="password" placeholder="Password" type="password" required>
-    <button>Sign in</button>
-    <div id="gaLoginErr" style="color:#b91c1c;font-size:12px"></div>
-  </form>
-</div>
+<!-- Authentication Check - Redirects to login.html if not authenticated -->
 <script>
-// Enhanced login system with better error handling
-async function gaCheckAuth(){
-  try{
-    const r = await fetch('/ga/api/me.php', {credentials:'same-origin'});
-    const loginModal = document.getElementById('loginModal');
-    
-    if(r.ok) {
-      // User is logged in - hide login modal and apply session
-      if(loginModal) loginModal.style.display='none';
-      const userData = await r.json();
-      console.log('User authenticated:', userData.user);
-      
-      // Apply session to the app safely
-      applySessionSafely(userData.user);
-    } else {
-      // User not logged in - show login modal  
-      if(loginModal) loginModal.style.display='grid';
-      console.log('User not authenticated - showing login modal');
-    }
-  }catch(e){ 
-    console.error('Auth check error:', e); 
-    const loginModal = document.getElementById('loginModal');
-    if(loginModal) loginModal.style.display='grid';
-  }
-}
-
-async function gaDoLogin(e){
-  e.preventDefault();
-  const f = e.target;
-  const body = { email: f.email.value, password: f.password.value };
-  const errorEl = document.getElementById('gaLoginErr');
-  const loginModal = document.getElementById('loginModal');
-  
-  // Clear previous errors
-  if(errorEl) errorEl.textContent = '';
-  
+// Check authentication on page load
+async function checkAuthentication() {
   try {
-    const r = await fetch('/ga/api/login.php', { 
-      method:'POST', 
-      headers:{'Content-Type':'application/json'}, 
-      credentials:'same-origin', 
-      body: JSON.stringify(body) 
+    const response = await fetch('/ga/api/me.php', {
+      credentials: 'same-origin'
     });
     
-    if(r.ok){ 
-      // Login successful - get user data and apply session
-      const userData = await r.json();
-      console.log('Login successful:', userData.user);
+    if (response.ok) {
+      const userData = await response.json();
+      console.log('User authenticated:', userData.user);
       
-      // Hide modal
-      if(loginModal) loginModal.style.display='none';
-      
-      // Apply session safely
-      applySessionSafely(userData.user);
-      
-      // Show success message
-      console.log('Login completed successfully');
-      
-    } else { 
-      const result = await r.json().catch(() => ({}));
-      const errorMsg = result.error || 'Invalid email or password';
-      if(errorEl) errorEl.textContent = errorMsg;
-      console.error('Login failed:', errorMsg);
+      // User is authenticated - show user info and continue
+      displayUserInfo(userData.user);
+      initializeApp(userData.user);
+    } else {
+      // User not authenticated - redirect to login page
+      console.log('User not authenticated, redirecting to login');
+      window.location.href = '/login.html';
     }
-  } catch(e) {
-    console.error('Login error:', e);
-    if(errorEl) errorEl.textContent = 'Login failed. Please try again.';
+  } catch (error) {
+    console.error('Authentication check failed:', error);
+    // On error, redirect to login page
+    window.location.href = '/login.html';
   }
 }
 
-// Safe session application function
-function applySessionSafely(user) {
-  try {
-    // Update user badge safely
-    const userBadge = document.getElementById('userBadge');
-    if(userBadge) {
-      userBadge.textContent = `${user.name} • ${user.role}`;
+// Display user information in the header
+function displayUserInfo(user) {
+  const userBadge = document.getElementById('userBadge');
+  const navUserName = document.getElementById('navUserName');
+  
+  if (userBadge) {
+    userBadge.textContent = `${user.name} • ${user.role}`;
+  }
+  
+  if (navUserName) {
+    navUserName.textContent = user.name;
+  }
+  
+  // Add logout functionality
+  userBadge.addEventListener('click', logout);
+  userBadge.style.cursor = 'pointer';
+  userBadge.title = 'Click to sign out';
+}
+
+// Logout function
+async function logout() {
+  if (confirm('Are you sure you want to sign out?')) {
+    try {
+      await fetch('/ga/api/logout.php', {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      window.location.href = '/login.html';
     }
-    
-    // Update navigation user name safely  
-    const navUserName = document.getElementById('navUserName');
-    if(navUserName) {
-      navUserName.textContent = user.name;
-    }
-    
-    // Apply session using existing function if available
-    if(typeof applySession === 'function') {
-      applySession(user);
-    }
-    
-    // Show appropriate panel based on role
-    showPanelByRole(user.role);
-    
-    console.log('Session applied successfully for user:', user.name);
-    
-  } catch(e) {
-    console.error('Error applying session:', e);
-    // Don't let session errors break the login - user is still logged in
   }
 }
 
-// Show panel based on user role
-function showPanelByRole(role) {
-  try {
-    if(typeof showPanel === 'function') {
+// Initialize the main application
+function initializeApp(user) {
+  // Apply session to existing functions if they exist
+  if (typeof applySession === 'function') {
+    applySession(user);
+  }
+  
+  // Show appropriate panel based on user role
+  setTimeout(() => {
+    if (typeof showPanel === 'function') {
       const roleMap = {
         'admin': 'panel-admin',
-        'sales': 'panel-dashboard-sales', 
+        'sales': 'panel-dashboard-sales',
         'rj': 'panel-winners',
         'collection': 'panel-collections'
       };
-      const panelId = roleMap[role.toLowerCase()] || 'panel-admin';
+      const panelId = roleMap[user.role.toLowerCase()] || 'panel-admin';
       showPanel(panelId);
       console.log('Showing panel:', panelId);
     }
-  } catch(e) {
-    console.error('Error showing panel:', e);
-  }
+  }, 100);
 }
 
-// Initialize authentication on page load
-window.addEventListener('DOMContentLoaded', gaCheckAuth);
-document.addEventListener('DOMContentLoaded', ()=>{
-  const frm = document.getElementById('gaLoginForm');
-  if(frm){ 
-    frm.addEventListener('submit', gaDoLogin);
-    console.log('Login form handler attached');
-  } else {
-    console.error('Login form not found!');
-  }
-});
+// Run authentication check when page loads
+document.addEventListener('DOMContentLoaded', checkAuthentication);
 </script>
 <!-- /GA Login Modal + JS -->
 

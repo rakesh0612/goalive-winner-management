@@ -1,0 +1,2 @@
+# Minimal .htaccess for basic functionality
+DirectoryIndex login.html index.html

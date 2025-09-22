@@ -1,44 +1,17 @@
-# Security configuration for GO ALIVE MEDIA Winner Management
-# Set default page to login first, then index
+# Cloudways Compatible Configuration
 DirectoryIndex login.html index.html index.php
 
-# PHP Security Headers
-php_flag display_errors Off
-php_flag log_errors On
-php_value session.cookie_httponly 1
-php_value session.use_strict_mode 1
-
-# HTTP Security Headers
+# Basic Security Headers (if supported)
 <IfModule mod_headers.c>
-    Header always set X-Content-Type-Options nosniff
-    Header always set X-Frame-Options SAMEORIGIN
-    Header always set X-XSS-Protection "1; mode=block"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+    Header set X-Content-Type-Options nosniff
+    Header set X-Frame-Options SAMEORIGIN
 </IfModule>
 
-# Directory Protection
+# Disable directory browsing
 Options -Indexes
 
-# Prevent access to sensitive files
-<Files "*.php.template">
-    Order deny,allow
-    Deny from all
-</Files>
-
-<Files "schema.sql">
-    Order deny,allow
-    Deny from all
-</Files>
-
-<Files "README*.txt">
-    Order deny,allow
-    Deny from all
-</Files>
-
-# URL Rewriting for clean URLs
+# URL Rewriting
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^admin/?$ index.html [L]
-RewriteRule ^dashboard/?$ index.html [L]
